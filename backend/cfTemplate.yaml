@@ -1,6 +1,14 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+- AWS::Serverless-2016-10-31
+- AWS::CodeStar
+
 Description: AB-APP
 
 Parameters:
+    ProjectId:
+        Type: String
+        Description: AWS CodeStar projectID used to associate new resources to team members
     APIName:
         Type: String
         Description: "Name of the AppSync API"
@@ -9,6 +17,14 @@ Parameters:
         AllowedPattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
 
 Resources:
+    AbAppGraphQL:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            Handler: index.handler
+            Runtime: nodejs8.10
+            Role:
+                Fn::ImportValue:
+                    !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"
         Description: "The GraphQL API for AB-APP"
@@ -20,7 +36,7 @@ Resources:
         Type: "AWS::AppSync::GraphQLSchema"
         Properties:
             ApiId: !GetAtt [AppSyncApi, ApiId]
-            DefinitionS3Location: "some/backet/schema.gql"
+            DefinitionS3Location: "schema.gql"
 
     AppSyncDataSource:
         Type: "AWS::AppSync::DataSource"
@@ -29,7 +45,7 @@ Resources:
             Name: "ab_app_lambda"
             Description: "The AB-APP AppSync Data Source"
             Type: AWS_LAMBDA
-            LambdaFunctionArn: "arn:aws:lambda:eu-west-1:556321430524:function:ab-app-graphql"
+            LambdaFunctionArn: !GetAtt [AbAppGraphQL, Arn]
 
     AppSyncGetFormQueryResolver:
         Type: "AWS::AppSync::Resolver"

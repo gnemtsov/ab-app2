@@ -1,0 +1,24 @@
+[
+    {
+        "name": "u_login",
+        "label": "Login",
+        "type": "String",
+        "value": "admin",
+        "required": true,
+        "validators": [
+            { 
+                "name": "strMinMax",
+                "message": "Login must be bigger than %0% and smaller than %1% chars", 
+                "params": [4, 32] 
+            }
+        ]
+    },
+    {
+        "name": "u_password",
+        "label": "Passord",
+        "noEcho": true,
+        "type": "String",
+        "value": "abapp",
+        "required": true
+    }
+]

@@ -1,0 +1,92 @@
+type AuthToken {
+	accessToken: String!
+	refreshToken: String!
+}
+
+type Department {
+	d_id: ID!
+	d_title: String
+	d_head: String
+	d_size: Int
+	d_created: String
+}
+
+input DepartmentInput {
+	d_id: ID!
+	d_title: String
+	d_head: String
+	d_size: Int
+	d_created: String
+}
+
+type FieldValidator {
+	f: String
+	message: String
+	params: [String]
+}
+
+type FormField {
+	name: String!
+	label: String
+	type: String
+	value: String
+	required: Boolean
+	validators: [FieldValidator]
+}
+
+type InvalidFormField {
+    name: String
+	message: String
+}
+
+type TableCol {
+    name: String!
+    title: String
+    defaultContent: String
+    sortOrder: Int
+    sortDirection: String
+    frontendFormatter: String
+    html: Boolean
+}
+
+type DepartmentsTable {
+    cols: [TableCol]
+    rows: [Department]
+}
+
+type Mutation {
+	login(u_login: String!, u_password: String!): AuthToken
+	token(sub: String!, refreshToken: String!): AuthToken
+	add(department: DepartmentInput!): InvalidFormField
+	edit(department: DepartmentInput!): InvalidFormField
+}
+
+type Query {
+	getForm(formName: String!, dataId: Int): [FormField]
+	listDepartments: DepartmentsTable
+}
+
+type Token {
+	id: ID!
+	userID: Int!
+	token: String
+	created: String
+	updated: String
+	expires: String
+	ip: String
+}
+
+type User {
+	u_id: ID!
+	u_login: String!
+	u_password: String!
+	u_firstname: String
+	u_lastname: String
+	u_timezone: String
+	u_access: Boolean
+}
+
+schema {
+	query: Query
+	mutation: Mutation
+}

@@ -1,0 +1,24 @@
+.Toolbar {
+    width: 100%;
+    background-color: #1d2583;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.2rem;
+}
+
+.Logo {
+    margin: 0.6rem;
+    width: 8rem;
+}
+
+.DesktopOnly {
+    display: none;
+}
+
+
+@media (min-width: 499px) {
+    .DesktopOnly {
+        display: block;
+    }
+}

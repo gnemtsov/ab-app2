@@ -1,0 +1,63 @@
+[
+    {
+        "name": "d_id",
+        "type": "Hidden",
+		"table": "departments"
+    },
+    {
+        "name": "d_title",
+        "label": "Title",
+        "value": "",
+        "type": "String",
+        "placeholder": "Department title",
+        "validators": [
+            { 
+                "name": "strMinMax",
+                "message": "Title must be bigger than %0% and smaller than %1% chars", 
+                "params": [6, 64] 
+            }
+        ],
+		"table": "departments",
+		"required": true
+    },
+    {
+        "name": "d_head",
+        "label": "Head",
+        "type": "String",
+        "value": "",
+        "placeholder": "Department head's name",
+        "validators": [
+            { 
+                "name": "strMinMax",
+                "message": "Head must be bigger than %0% and smaller than %1% chars", 
+                "params": [3, 32] 
+            }
+        ],
+		"table": "departments",
+		"required": true
+    },
+    {
+        "name": "d_size",
+        "label": "Size",
+        "value": "",
+        "placeholder": "Department size",
+        "validators": [
+            { 
+                "name": "numMin",
+                "message": "There must be at least %0% computers", 
+                "params": [5] 
+            }
+        ],
+		"table": "departments",
+		"required": true
+    },
+    {
+        "name": "d_created",
+        "label": "Created",
+        "type": "Date",
+        "value": "",
+        "placeholder": "Department creation date",
+		"table": "departments",
+		"required": true
+    }
+]

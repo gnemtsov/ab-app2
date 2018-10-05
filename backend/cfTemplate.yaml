@@ -1,0 +1,163 @@
+Description: AB-APP
+
+Parameters:
+    APIName:
+        Type: String
+        Description: "Name of the AppSync API"
+        MinLength: 3
+        MaxLength: 20
+        AllowedPattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+
+Resources:
+    AppSyncApi:
+        Type: "AWS::AppSync::GraphQLApi"
+        Description: "The GraphQL API for AB-APP"
+        Properties:
+            AuthenticationType: "API_KEY"
+            Name: !Sub ${APIName}
+
+    AppSyncSchema:
+        Type: "AWS::AppSync::GraphQLSchema"
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            DefinitionS3Location: "some/backet/schema.gql"
+
+    AppSyncDataSource:
+        Type: "AWS::AppSync::DataSource"
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            Name: "ab_app_lambda"
+            Description: "The AB-APP AppSync Data Source"
+            Type: AWS_LAMBDA
+            LambdaFunctionArn: "arn:aws:lambda:eu-west-1:556321430524:function:ab-app-graphql"
+
+    AppSyncGetFormQueryResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Query
+            FieldName: getForm
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "forms",
+                      "action": "getForm",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $context.request.headers
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncListDepartmentsQueryResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Query
+            FieldName: listDepartments
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "departments",
+                      "action": "list",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $context.request.headers
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncLoginMutationResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Mutation
+            FieldName: login
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "auth",
+                      "action": "login",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity)
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncTokenMutationResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Mutation
+            FieldName: token
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "auth",
+                      "action": "token",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $context.request.headers
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncAddMutationResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Mutation
+            FieldName: add
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "departments",
+                      "action": "add",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $context.request.headers
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncEditMutationResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Mutation
+            FieldName: edit
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "departments",
+                      "action": "edit",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $context.request.headers
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"

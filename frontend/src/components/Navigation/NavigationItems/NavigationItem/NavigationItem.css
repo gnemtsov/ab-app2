@@ -1,0 +1,41 @@
+.NavigationItem {
+    margin: 0.7rem;
+    display: block;
+    width: 100%;
+}
+
+.NavigationItem a {
+    color: #2534e4;
+    text-decoration: none;
+    width: 100%;
+    display: block;
+}
+
+.NavigationItem a:hover,
+.NavigationItem a:active,
+.NavigationItem a.active {
+    color: #FF9800;
+}
+
+@media (min-width: 500px) {
+    .NavigationItem {
+        margin: 0.7rem;
+        display: flex;
+        height: 100%;
+        width: auto;
+        align-items: center;
+    }
+    
+    .NavigationItem a {
+        color: white;
+        height: 100%;
+        padding: 0.2rem;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .NavigationItem a:hover,
+    .NavigationItem a:active,
+    .NavigationItem a.active {
+        border-bottom: 2px solid #FF9800;
+    }
+}

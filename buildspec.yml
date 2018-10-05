@@ -5,18 +5,18 @@ phases:
     commands:
       # Install backend dependencies
       - mkdir -p ./backend/node_modules
-      - npm install --prefix ./backend
+      - npm install --error --prefix ./backend
 
       # Install frontend dependencies
       - mkdir -p ./frontend/node_modules
-      - npm install --prefix ./frontend
+      - npm install --error --prefix ./frontend
 
       # Upgrade AWS CLI to the latest version
       - pip install --upgrade awscli
   pre_build:
     commands:
       # Discover and run unit tests
-      - jest test
+      - cd frontend && jest --silent && cd ..
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation

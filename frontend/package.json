@@ -68,7 +68,8 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
-    "test": "node scripts/test.js --env=jsdom"
+    "test": "node scripts/test.js --env=jsdom",
+    "test-ci": "node scripts/test.js --env=jsdom --reporters=default"
   },
   "jest": {
     "collectCoverageFrom": [
@@ -128,5 +129,8 @@
   },
   "eslintConfig": {
     "extends": "react-app"
+  },
+  "devDependencies": {
+    "jest-snapshots-book": "^1.0.2"
   }
 }

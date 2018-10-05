@@ -16,7 +16,7 @@ phases:
   pre_build:
     commands:
       # Discover and run unit tests
-      - npm run --prefix frontend test
+      - npm run --prefix frontend test-ci
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation

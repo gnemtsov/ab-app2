@@ -47,7 +47,8 @@ Resources:
             Name: "ab_app_lambda"
             Description: "The AB-APP AppSync Data Source"
             Type: AWS_LAMBDA
-            LambdaFunctionArn: !GetAtt [AbAppGraphQL, Arn]
+            LambdaConfig:
+                LambdaFunctionArn: !GetAtt [AbAppGraphQL, Arn]
 
     AppSyncGetFormQueryResolver:
         Type: "AWS::AppSync::Resolver"

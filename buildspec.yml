@@ -23,11 +23,12 @@ phases:
       - npm run build
       
       # Upload frontend
-      - aws s3 cp --recursive build s3://$WEBSITE_S3_BUCKET/public/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
-      #- sed -i -e "s|assets/|$WEBSITE_S3_PREFIX/public/assets/|g" public/index.html
+      - aws s3 cp --recursive build s3://$WEBSITE_S3_BUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+      #- sed -i -e "s|assets/|$WEBSITE_S3_PREFIX/assets/|g" index.html
 
       # Package cloudformation template
-      - aws cloudformation package --debug --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
+      - cd ${CODEBUILD_SRC_DIR}
+      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
 artifacts:
   type: zip
   files:

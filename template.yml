@@ -17,11 +17,21 @@ Parameters:
         AllowedPattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
 
 Resources:
+    AbAppS3Bucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            AccessControl: PublicRead
+            BucketName: ab-app2
+            WebsiteConfiguration:
+                IndexDocument: index.html
+                ErrorDocument: index.html
+        DeletionPolicy: Retain
     AbAppGraphQL:
         Type: "AWS::Serverless::Function"
         Properties:
             Handler: index.handler
             Runtime: nodejs8.10
+            CodeUri: backend
             Role:
                 Fn::ImportValue:
                     !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]

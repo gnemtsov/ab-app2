@@ -3,7 +3,7 @@ Transform:
 - AWS::Serverless-2016-10-31
 - AWS::CodeStar
 
-Description: AB-APP
+Description: AB-APP CD template
 
 Parameters:
     ProjectId:
@@ -12,6 +12,7 @@ Parameters:
     APIName:
         Type: String
         Description: "Name of the AppSync API"
+        Default: "AB-APP"
         MinLength: 3
         MaxLength: 20
         AllowedPattern: "^[a-zA-Z][a-zA-Z0-9_]*$"

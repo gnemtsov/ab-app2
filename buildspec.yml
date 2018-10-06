@@ -3,31 +3,31 @@ version: 0.2
 phases:
   install:
     commands:
-      # Install backend dependencies
-      - mkdir -p ./backend/node_modules
-      - npm install --quiet --prefix ./backend
-
-      # Install frontend dependencies
-      - mkdir -p ./frontend/node_modules
-      - npm install --quiet --prefix ./frontend
-
       # Upgrade AWS CLI to the latest version
       - pip install --upgrade awscli
+
+      # Install backend dependencies
+      - cd ${CODEBUILD_SRC_DIR}/backend
+      - npm install --quiet
+
+      # Install frontend dependencies
+      - cd ${CODEBUILD_SRC_DIR}/frontend
+      - npm install --quiet
   pre_build:
     commands:
       # Discover and run unit tests
       #- npm run --prefix ./frontend test-ci
   build:
     commands:
-      # Use AWS SAM to package the application by using AWS CloudFormation
-      - cd ./frontend
+      # Build frontend
       - npm run build
-      - npm cd ..
-      - aws s3 cp --recursive ./frontend/build/ s3://$WEBSITE_S3_BUCKET/public/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+      
+      # Upload frontend
+      - aws s3 cp --recursive build s3://$WEBSITE_S3_BUCKET/public/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
       #- sed -i -e "s|assets/|$WEBSITE_S3_PREFIX/public/assets/|g" public/index.html
-      - aws s3 cp schema.gql s3://$S3_BUCKET/schema.gql
-      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
 
+      # Package cloudformation template
+      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
 artifacts:
   type: zip
   files:

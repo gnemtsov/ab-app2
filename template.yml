@@ -73,7 +73,7 @@ Resources:
             Name: "ab_app_lambda"
             Description: "The AB-APP AppSync Data Source"
             Type: AWS_LAMBDA
-            ServiceRoleArn: !GetAtt DynamoDBRole.Arn
+            ServiceRoleArn: !GetAtt [Role, Arn]
             LambdaConfig:
                 LambdaFunctionArn: !GetAtt [Lambda, Arn]
 

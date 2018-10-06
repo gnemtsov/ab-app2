@@ -28,26 +28,30 @@ Resources:
 #                Fn::ImportValue:
 #                    !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]
     Role: 
-        Type: AWS::IAM::Role
+        Type: "AWS::IAM::Role"
         Properties: 
             AssumeRolePolicyDocument: 
-                Version: 2012-10-17
+                Version: "2012-10-17"
                 Statement: 
-                    - Effect: Allow
+                    - 
+                        Effect: "Allow"
                         Principal:
-                            Service: appsync.amazonaws.com
+                            Service: 
+                                - "appsync.amazonaws.com"
                         Action:
-                            - sts:AssumeRole
+                            - "sts:AssumeRole"
             Policies: 
-                - PolicyName: allow-access-to-lambda-from-appsync
-                PolicyDocument: 
-                    Version: 2012-10-17
-                    Statement: 
-                        - Effect: Allow
-                        Action: lambda:invokeFunction
-                        Resource:
-                            - !GetAtt [ Lambda, Arn ]
-                            - !Join [ '', [ !GetAtt [ Lambda, Arn ], ':*' ] ]
+                - 
+                    PolicyName: "allow-access-to-lambda-from-appsync"
+                    PolicyDocument: 
+                        Version: "2012-10-17"
+                        Statement: 
+                            - 
+                                Effect: "Allow"
+                                Action: "lambda:invokeFunction"
+                                Resource:
+                                    - !GetAtt [ Lambda, Arn ]
+                                    - !Join [ '', [ !GetAtt [ Lambda, Arn ], ':*' ] ]
 
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"

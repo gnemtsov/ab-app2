@@ -25,12 +25,13 @@ Resources:
             Runtime: nodejs8.10
             CodeUri: backend
             Environment:
-                DB_HOST: "{{resolve:ssm:/ab-app2/db-host:1}}"
-                DB_NAME: "{{resolve:ssm:/ab-app2/db-name:1}}"
-                DB_PASSWORD: "{{resolve:ssm:/ab-app2/db-password:1}}"
-                DB_USER: "{{resolve:ssm:/ab-app2/db-user:1}}"
-                PROD: "1"
-                SECRET: "{{resolve:ssm:/ab-app2/secret:1}}"
+                Variables:
+                    DB_HOST: "{{resolve:ssm:/ab-app2/db-host:1}}"
+                    DB_NAME: "{{resolve:ssm:/ab-app2/db-name:1}}"
+                    DB_PASSWORD: "{{resolve:ssm:/ab-app2/db-password:1}}"
+                    DB_USER: "{{resolve:ssm:/ab-app2/db-user:1}}"
+                    PROD: "1"
+                    SECRET: "{{resolve:ssm:/ab-app2/secret:1}}"
 #            Role:
 #                Fn::ImportValue:
 #                    !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]

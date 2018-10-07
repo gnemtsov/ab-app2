@@ -24,7 +24,7 @@ const client = new AWSAppSyncClient({
 	url:
 		process.env.NODE_ENV === "development"
 			? process.env.REACT_APP_LOCAL_APPSYNC_URL
-			: "https://ds3mhssz6zfmvemnkkmp5qyu6q.appsync-api.eu-west-1.amazonaws.com/graphql",
+			: "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",
 	region: "eu-west-1",
 	auth: {
 		type: AUTH_TYPE.OPENID_CONNECT,

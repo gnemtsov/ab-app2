@@ -57,7 +57,7 @@ const appSyncLink = createAppSyncLink({
 	auth: {
 		type: AUTH_TYPE.AWS_IAM,
 		credentials: new AWS.CognitoIdentityCredentials({
-			IdentityPoolId: "xxx"
+			IdentityPoolId: "eu-west-1:dffe4e03-9e89-4118-911f-ee327e257d9f"
 		})
 	}
 });
@@ -68,9 +68,7 @@ const link = ApolloLink.from([
 	appSyncLink
 ]);
 
-const client = new AWSAppSyncClient({
-	disableOffline: true
-}, { link });
+const client = new AWSAppSyncClient({ disableOffline: true }, { link });
 
 axios.defaults.baseURL =
 	process.env.NODE_ENV === "development" ?

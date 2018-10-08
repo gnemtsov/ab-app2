@@ -14,32 +14,61 @@ import { watchAuth, watchDepartments } from "./store/sagas";
 
 import axios from "axios";
 
-import { AWSAppSyncClient, appSyncConfig } from "aws-appsync";
+import { AWSAppSyncClient, appSyncConfig, createAppSyncLink } from "aws-appsync";
+import { ApolloLink } from 'apollo-link';
+import { setContext } from "apollo-link-context";
+import { onError } from 'apollo-link-error';
 
 import { Rehydrated } from "aws-appsync-react";
 import { AUTH_TYPE } from "aws-appsync/lib/link/auth-link";
 import { ApolloProvider, ApolloConsumer } from "react-apollo";
 
-const client = new AWSAppSyncClient({
-	url:
-		process.env.NODE_ENV === "development"
-			? process.env.REACT_APP_LOCAL_APPSYNC_URL
-			: "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",
-	region: "eu-west-1",
-	auth: {
-		type: AUTH_TYPE.OPENID_CONNECT,
-		jwtToken: () => {
-			const tokens = JSON.parse(localStorage.getItem("tokens"));
-			return tokens === null ? null : "Bearer " + tokens.accessToken;
+const authLink = setContext((request, previousContext) => {
+	let tokens = localStorage.getItem("tokens");
+	if (tokens !== null) {
+		const tokens = JSON.parse(localStorage.getItem("tokens"));
+		return {
+			headers: {
+				'Authorization': "Bearer " + tokens.accessToken
+			}
 		}
-	},
-	disableOffline: true
+	}
+	else {
+		return previousContext;
+	}
 });
 
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+	if (graphQLErrors)
+		graphQLErrors.map(({ message, locations, path }) =>
+			console.log(
+				`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+			)
+		);
+	if (networkError) console.log(`[Network error]: ${networkError}`);
+});
+
+const appSyncLink = createAppSyncLink({
+	url: process.env.NODE_ENV === "development" ?
+		process.env.REACT_APP_LOCAL_APPSYNC_URL : "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",
+	region: "eu-west-1",
+	auth: { type: AUTH_TYPE.NONE }
+});
+
+const link = ApolloLink.from([
+	authLink,
+	errorLink,
+	appSyncLink
+]);
+
+const client = new AWSAppSyncClient({
+	disableOffline: true
+}, { link });
+
 axios.defaults.baseURL =
-	process.env.NODE_ENV === "development"
-		? "http://127.0.0.1:3000"
-		: "https://kg0mslaalb.execute-api.eu-west-1.amazonaws.com/prod";
+	process.env.NODE_ENV === "development" ?
+	"http://127.0.0.1:3000" :
+	"https://kg0mslaalb.execute-api.eu-west-1.amazonaws.com/prod";
 
 const composeEnhancers =
 	process.env.NODE_ENV === "development" ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ : null || compose;

@@ -14,7 +14,7 @@ const { DB, FORM } = require("core/index");
 //Checks login and password, provides new tokens for valid user
 module.exports = (event, context, callback) => {
 	FORM.isValid("login", event.arguments).then(validationResult => {
-		if (validationResult !== true) {
+		if (validationResult.name !== null) {
 			return callback(validationResult);
 		}
 

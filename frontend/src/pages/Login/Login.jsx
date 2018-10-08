@@ -25,7 +25,7 @@ const Login = props => {
 				buttonText={["Login", "Logging in.."]}
 				outputObjectName="login"
 				mutation={LOGIN}
-				update={(cache, response) => props.login(response.data.login)}
+				submitHandler={response => props.login(response.data.login)}
 			/>
 		</div>
 	);

@@ -97,10 +97,10 @@ const CF_SCHEMA = yaml.Schema.create([
 ]);
 
 //Read GraphQL schema
-const typeDefs = fs.readFileSync("schema.gql", "utf8");
+const typeDefs = fs.readFileSync("../schema.gql", "utf8");
 
 //Read CloudFront template
-const cfTemplate = yaml.load(fs.readFileSync("cfTemplate.yaml", "utf8"), {
+const cfTemplate = yaml.load(fs.readFileSync("../template.yml", "utf8"), {
 	schema: CF_SCHEMA
 });
 

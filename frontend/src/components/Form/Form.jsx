@@ -30,7 +30,8 @@ class AbForm extends Component {
 		formName: PropTypes.string.isRequired,
 		dataId: PropTypes.number,
 		inputObjectName: PropTypes.string,
-		outputObjectName: PropTypes.string.isRequired
+		outputObjectName: PropTypes.string.isRequired,
+		submitHandler: PropTypes.func
 	};
 
 	constructor(props) {
@@ -179,6 +180,11 @@ class AbForm extends Component {
 					variables
 				})
 				.then(response => {
+					console.log(JSON.stringify(response));
+					console.log(this.props.outputObjectName);
+					if (this.props.submitHandler) {
+						return this.props.submitHandler(response);
+					}
 					const { name: fieldName, message: fieldMessage } = response.data[this.props.outputObjectName];
 					if (fieldMessage === null) {
 						//successful form submition

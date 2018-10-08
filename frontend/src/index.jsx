@@ -14,6 +14,8 @@ import { watchAuth, watchDepartments } from "./store/sagas";
 
 import axios from "axios";
 
+import AWS from "aws-sdk";
+
 import { AWSAppSyncClient, appSyncConfig, createAppSyncLink } from "aws-appsync";
 import { ApolloLink } from 'apollo-link';
 import { setContext } from "apollo-link-context";
@@ -52,7 +54,12 @@ const appSyncLink = createAppSyncLink({
 	url: process.env.NODE_ENV === "development" ?
 		process.env.REACT_APP_LOCAL_APPSYNC_URL : "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",
 	region: "eu-west-1",
-	auth: { type: AUTH_TYPE.AWS_IAM, credentials: {} }
+	auth: {
+		type: AUTH_TYPE.AWS_IAM,
+		credentials: new AWS.CognitoIdentityCredentials({
+			IdentityPoolId: "xxx"
+		})
+	}
 });
 
 const link = ApolloLink.from([

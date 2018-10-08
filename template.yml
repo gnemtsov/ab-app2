@@ -28,7 +28,7 @@ Resources:
         Properties:
             IdentityPoolId: !Ref IdentityPool
             Roles: 
-                unauthenticated: !GetAtt IdentityRole.Arn
+                unauthenticated: !GetAtt [IdentityRole, Arn]
     
     Lambda:
         Type: "AWS::Serverless::Function"
@@ -98,7 +98,7 @@ Resources:
                                 Effect: "Allow"
                                 Action: "appsync:GraphQL"
                                 Resource:
-                                    - !Join [ '', [ !GetAtt AppSyncApi.Arn, '/*' ] ]
+                                    - !Join [ '', [ !GetAtt [AppSyncApi, Arn], '/*' ] ]
 
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"
@@ -141,7 +141,7 @@ Resources:
                       "action": "getForm",
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
-                      "headers": $context.request.headers
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
@@ -163,7 +163,7 @@ Resources:
                       "action": "list",
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
-                      "headers": $context.request.headers
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
@@ -206,7 +206,7 @@ Resources:
                       "action": "token",
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
-                      "headers": $context.request.headers
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
@@ -228,7 +228,7 @@ Resources:
                       "action": "add",
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
-                      "headers": $context.request.headers
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
@@ -250,7 +250,7 @@ Resources:
                       "action": "edit",
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
-                      "headers": $context.request.headers
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"

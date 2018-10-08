@@ -6,9 +6,6 @@ Transform:
 Description: AB-APP2 CD template
 
 Parameters:
-    ProjectId:
-        Type: String
-        Description: AWS CodeStar projectID used to associate new resources to team members
     APIName:
         Type: String
         Description: "Name of the AppSync API"
@@ -18,6 +15,18 @@ Parameters:
         AllowedPattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
 
 Resources:
+    IdentityPool:
+        Type: "AWS::Cognito::IdentityPool"
+        Properties:
+            AllowUnauthenticatedIdentities: true
+
+    IdentityRoleAttachment:
+        Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+        Properties:
+            IdentityPoolId: !Ref IdentityPool
+            Roles: 
+                unauthenticated: !GetAtt IdentityRole.Arn
+    
     Lambda:
         Type: "AWS::Serverless::Function"
         Properties:
@@ -32,10 +41,8 @@ Resources:
                     DB_USER: "{{resolve:ssm:/ab-app2/db-user:1}}"
                     PROD: "1"
                     SECRET: "{{resolve:ssm:/ab-app2/secret:1}}"
-#            Role:
-#                Fn::ImportValue:
-#                    !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]
-    Role: 
+
+    AppSyncRole: 
         Type: "AWS::IAM::Role"
         Properties: 
             AssumeRolePolicyDocument: 
@@ -61,11 +68,40 @@ Resources:
                                     - !GetAtt [ Lambda, Arn ]
                                     - !Join [ '', [ !GetAtt [ Lambda, Arn ], ':*' ] ]
 
+    IdentityRole: 
+        Type: "AWS::IAM::Role"
+        Properties: 
+            AssumeRolePolicyDocument: 
+                Version: "2012-10-17"
+                Statement:
+                    - 
+                        Effect: "Allow"
+                        Principal: 
+                            Federated: "cognito-identity.amazonaws.com"
+                        Action: 
+                            - "sts:AssumeRoleWithWebIdentity"
+                        Condition:
+                            StringEquals: 
+                                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+                            "ForAnyValue:StringLike":
+                                "cognito-identity.amazonaws.com:amr": unauthenticated
+            Policies: 
+                - 
+                    PolicyName: "allow-unauthenticated-access-to-appsync"
+                    PolicyDocument: 
+                        Version: "2012-10-17"
+                        Statement: 
+                            - 
+                                Effect: "Allow"
+                                Action: "appsync:GraphQL"
+                                Resource:
+                                    - !GetAtt AppSyncApi.Arn
+
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"
         Description: "The GraphQL API for AB-APP"
         Properties:
-            AuthenticationType: "API_KEY"
+            AuthenticationType: "AWS_IAM"
             Name: !Sub ${APIName}
 
     AppSyncSchema:
@@ -81,7 +117,7 @@ Resources:
             Name: "ab_app_lambda"
             Description: "The AB-APP AppSync Data Source"
             Type: AWS_LAMBDA
-            ServiceRoleArn: !GetAtt [Role, Arn]
+            ServiceRoleArn: !GetAtt [AppSyncRole, Arn]
             LambdaConfig:
                 LambdaFunctionArn: !GetAtt [Lambda, Arn]
 
@@ -215,3 +251,9 @@ Resources:
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
+
+#Outputs:
+#    IdentityPoolId:
+#        Value: !Ref IdentityPool
+#        Export:
+#            Name: "IdentityPool::Id"

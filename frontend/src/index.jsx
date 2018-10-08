@@ -52,7 +52,7 @@ const appSyncLink = createAppSyncLink({
 	url: process.env.NODE_ENV === "development" ?
 		process.env.REACT_APP_LOCAL_APPSYNC_URL : "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",
 	region: "eu-west-1",
-	auth: { type: AUTH_TYPE.NONE }
+	auth: { type: AUTH_TYPE.AWS_IAM, credentials:  }
 });
 
 const link = ApolloLink.from([

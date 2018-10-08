@@ -50,6 +50,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 	if (networkError) console.log(`[Network error]: ${networkError}`);
 });
 
+AWS.config.update({region: 'eu-west-1'});
 const appSyncLink = createAppSyncLink({
 	url: process.env.NODE_ENV === "development" ?
 		process.env.REACT_APP_LOCAL_APPSYNC_URL : "https://vipqqwuxvfdn7gaos7u4aav3su.appsync-api.eu-west-1.amazonaws.com/graphql",

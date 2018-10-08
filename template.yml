@@ -44,6 +44,13 @@ Resources:
                     DB_USER: "{{resolve:ssm:/ab-app2/db-user:1}}"
                     PROD: "1"
                     SECRET: "{{resolve:ssm:/ab-app2/secret:1}}"
+            VpcConfig:
+                SecurityGroupIds:
+                    - "sg-b17c96d6"
+                SubnetIds:
+                    - "subnet-750ef410"
+                    - "subnet-88af4eff"
+                    - "subnet-ebc2c5ad"
 
     AppSyncRole: 
         Type: "AWS::IAM::Role"

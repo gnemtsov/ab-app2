@@ -98,7 +98,7 @@ Resources:
                                 Effect: "Allow"
                                 Action: "appsync:GraphQL"
                                 Resource:
-                                    - !GetAtt AppSyncApi.Arn
+                                    - !Join [ '', [ !GetAtt AppSyncApi.Arn, '/*' ] ]
 
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"

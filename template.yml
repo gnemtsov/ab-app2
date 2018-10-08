@@ -6,6 +6,9 @@ Transform:
 Description: AB-APP2 CD template
 
 Parameters:
+    ProjectId:
+        Type: String
+        Description: AWS CodeStar projectID used to associate new resources to team members
     APIName:
         Type: String
         Description: "Name of the AppSync API"

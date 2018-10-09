@@ -16,7 +16,7 @@ exports.check = event => {
 		return "Access granted";
 	}
 
-	if (event.headers === undefined || event.headers["Authorization"] === undefined) {
+	if (event.headers === undefined || event.headers["x-app-token"] === undefined) {
 		return "No token provided";
 	}
 

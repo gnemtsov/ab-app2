@@ -31,7 +31,7 @@ const authLink = setContext((request, previousContext) => {
 		const tokens = JSON.parse(localStorage.getItem("tokens"));
 		return {
 			headers: {
-				'Authorization': "Bearer " + tokens.accessToken
+				'X-App-Token': "Bearer " + tokens.accessToken
 			}
 		}
 	}

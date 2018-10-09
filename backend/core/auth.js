@@ -21,13 +21,15 @@ exports.check = event => {
 	}
 
 	try {
-		const accessToken = event.headers["Authorization"].split(" ")[1];
+		const [type, accessToken] = event.headers["X-App-Token"].split(" ");
+		if(type !=== 'Bearer') throw 'Wrong token type';
 		userData = jwt.verify(accessToken, process.env.SECRET);
-	} catch (error) {
+	}
+	catch (error) {
 		return "Failed to verify token";
 	}
 
-    //--->add fine-grained access control, using info from userData object
-    
+	//--->add fine-grained access control, using info from userData object
+
 	return "Access granted";
 };

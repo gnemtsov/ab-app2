@@ -10,7 +10,7 @@ AB-APP is still under development. **It is not finished**! Feel free to experime
 
 ## Architecture
 
-![AB-APP architecture](architecture-Main-API-Gateway.png)
+![AB-APP architecture](architecture-Main-AppSync.png)
 
 The application uses RDS/DynamoDB and S3 for persistent storage. A single lambda function holds all the backend logic. API Gateway (for now) is used as a proxy service to pass requests from the frontend to the backend. CloudFront CDN allows delivering the application's content fast.
 
@@ -101,7 +101,7 @@ The frontend is responsible for rendering tables. It has two React components: a
 
 HOC is responsible for fetching table data from the backend and applying frontend formatters. The core component is responsible for rendering and providing main table functionality (selecting, sorting, pagination, etc.)
 
-![Tables architecture](architecture-Tables-API-Gateway.png)
+![Tables architecture](architecture-Tables-AppSync.png)
 
 ## Formatters functions
 Formatter function is a function that accepts column description and raw table data of the current row and returns the rendered content of table cell. There are backend and frontend libs of formatters functions.
@@ -250,7 +250,7 @@ The frontend has two React components: a high order component (HOC) and a core f
 
 HOC is responsible for fetching form data from the backend and sending user data back - submission of the form. The core component is responsible for rendering and validation.
 
-![Forms architecture](architecture-Forms-API-Gateway.png)
+![Forms architecture](architecture-Forms-AppSync.png)
 
 ## Validation
 

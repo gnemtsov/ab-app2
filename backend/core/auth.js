@@ -21,7 +21,7 @@ exports.check = event => {
 	}
 
 	try {
-		const [type, accessToken] = event.headers["X-App-Token"].split(" ");
+		const [type, accessToken] = event.headers["x-app-token"].split(" ");
 		if(type !== 'Bearer') throw 'Wrong token type';
 		userData = jwt.verify(accessToken, process.env.SECRET);
 	}

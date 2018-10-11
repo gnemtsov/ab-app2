@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const mysql = require('mysql2/promise');
+const mysql = require("mysql2/promise");
 
 module.exports = {
     connection: null,
@@ -16,4 +16,4 @@ module.exports = {
 
         return this.connection;
     }
-}
+};

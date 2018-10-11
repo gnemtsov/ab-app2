@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-- AWS::Serverless-2016-10-31
-- AWS::CodeStar
+    - AWS::Serverless-2016-10-31
+    - AWS::CodeStar
 
 Description: AB-APP2 CD template
 
@@ -27,9 +27,9 @@ Resources:
         Type: "AWS::Cognito::IdentityPoolRoleAttachment"
         Properties:
             IdentityPoolId: !Ref IdentityPool
-            Roles: 
+            Roles:
                 unauthenticated: !GetAtt [IdentityRole, Arn]
-    
+
     Lambda:
         Type: "AWS::Serverless::Function"
         Properties:
@@ -42,7 +42,7 @@ Resources:
                     DB_NAME: "{{resolve:ssm:/ab-app2/db-name:1}}"
                     DB_PASSWORD: "{{resolve:ssm:/ab-app2/db-password:1}}"
                     DB_USER: "{{resolve:ssm:/ab-app2/db-user:1}}"
-                    PROD: "1"
+                    PROD: "{{resolve:ssm:/ab-app2/prod:1}}"
                     SECRET: "{{resolve:ssm:/ab-app2/secret:1}}"
             VpcConfig:
                 SecurityGroupIds:
@@ -52,60 +52,54 @@ Resources:
                     - "subnet-88af4eff"
                     - "subnet-ebc2c5ad"
 
-    AppSyncRole: 
+    AppSyncRole:
         Type: "AWS::IAM::Role"
-        Properties: 
-            AssumeRolePolicyDocument: 
-                Version: "2012-10-17"
-                Statement: 
-                    - 
-                        Effect: "Allow"
-                        Principal:
-                            Service: 
-                                - "appsync.amazonaws.com"
-                        Action:
-                            - "sts:AssumeRole"
-            Policies: 
-                - 
-                    PolicyName: "allow-access-to-lambda-from-appsync"
-                    PolicyDocument: 
-                        Version: "2012-10-17"
-                        Statement: 
-                            - 
-                                Effect: "Allow"
-                                Action: "lambda:invokeFunction"
-                                Resource:
-                                    - !GetAtt [ Lambda, Arn ]
-                                    - !Join [ '', [ !GetAtt [ Lambda, Arn ], ':*' ] ]
-
-    IdentityRole: 
-        Type: "AWS::IAM::Role"
-        Properties: 
-            AssumeRolePolicyDocument: 
+        Properties:
+            AssumeRolePolicyDocument:
                 Version: "2012-10-17"
                 Statement:
-                    - 
-                        Effect: "Allow"
-                        Principal: 
-                            Federated: "cognito-identity.amazonaws.com"
-                        Action: 
-                            - "sts:AssumeRoleWithWebIdentity"
-                        Condition:
-                            StringEquals: 
-                                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
-                            "ForAnyValue:StringLike":
-                                "cognito-identity.amazonaws.com:amr": unauthenticated
-            Policies: 
-                - 
-                    PolicyName: "allow-unauthenticated-access-to-appsync"
-                    PolicyDocument: 
-                        Version: "2012-10-17"
-                        Statement: 
-                            - 
-                                Effect: "Allow"
-                                Action: "appsync:GraphQL"
-                                Resource:
-                                    - !Join [ '', [ !GetAtt [AppSyncApi, Arn], '/*' ] ]
+                    - Effect: "Allow"
+                      Principal:
+                          Service:
+                              - "appsync.amazonaws.com"
+                      Action:
+                          - "sts:AssumeRole"
+            Policies:
+                - PolicyName: "allow-access-to-lambda-from-appsync"
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Effect: "Allow"
+                            Action: "lambda:invokeFunction"
+                            Resource:
+                                - !GetAtt [Lambda, Arn]
+                                - !Join ["", [!GetAtt [Lambda, Arn], ":*"]]
+
+    IdentityRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: "Allow"
+                      Principal:
+                          Federated: "cognito-identity.amazonaws.com"
+                      Action:
+                          - "sts:AssumeRoleWithWebIdentity"
+                      Condition:
+                          StringEquals:
+                              "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+                          "ForAnyValue:StringLike":
+                              "cognito-identity.amazonaws.com:amr": unauthenticated
+            Policies:
+                - PolicyName: "allow-unauthenticated-access-to-appsync"
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Effect: "Allow"
+                            Action: "appsync:GraphQL"
+                            Resource:
+                                - !Join ["", [!GetAtt [AppSyncApi, Arn], "/*"]]
 
     AppSyncApi:
         Type: "AWS::AppSync::GraphQLApi"
@@ -191,7 +185,8 @@ Resources:
                       "module": "auth",
                       "action": "login",
                       "arguments": $utils.toJson($context.arguments),
-                      "identity": $utils.toJson($context.identity)
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $utils.toJson($context.request.headers)
                   }
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"

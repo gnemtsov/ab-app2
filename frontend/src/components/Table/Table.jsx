@@ -1,30 +1,34 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import ErrorBoundary from "../../hoc/errorBoundary/errorBoundary";
 
-import Paginator from './Paginator/Paginator';
-import Toolbar from './Toolbar/Toolbar';
-import classes from './Table.css';
+import * as Formatters from "./Formatters/Formatters";
+import Paginator from "./Paginator/Paginator";
+import Toolbar from "./Toolbar/Toolbar";
+import classes from "./Table.css";
 
 export default class Table extends Component {
-    defaultSortParams = []
+    defaultSortParams = [];
 
     static defaultProps = {
         rowsPerPage: 10,
         selectable: false,
         csvExport: true,
-        emptyTableMessage: 'No data specified',
+        title: "Table title",
+        emptyTableMessage: "No data specified",
         cols: [],
         rows: []
-    }
+    };
 
     static propTypes = {
         rowsPerPage: PropTypes.number,
         selectable: PropTypes.bool,
         csvExport: PropTypes.bool,
+        title: PropTypes.string,
         emptyTableMessage: PropTypes.string,
         cols: PropTypes.array,
         rows: PropTypes.array
-    }
+    };
 
     state = {
         cols: [],
@@ -38,24 +42,32 @@ export default class Table extends Component {
         bodyTop: 0,
         headerHeight: 0,
         bodyHeight: 0
-    }
+    };
 
-    constructor(props) { //constructor updates initial state
+    constructor(props) {
+        //constructor updates initial state
         super(props);
 
-        this.refHeader = React.createRef()
-        this.refBody = React.createRef()
+        this.refHeader = React.createRef();
+        this.refBody = React.createRef();
 
         let { rowsPerPage, cols, rows } = props;
         const totalRows = rows.length;
         const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+        //make functions out of formatters
+        cols = cols.map(col => ({
+            ...col,
+            formatter: Formatters[col.frontendFormatter],
+            frontendFormatter: null
+        }));
 
         //make defaultSortParams
         let sortCols = cols.filter(col => col.sortDirection !== undefined);
         if (sortCols.length) {
             sortCols.sort((a, b) => a.sortOrder - b.sortOrder);
 
-            this.defaultSortParams = sortCols.map((col) => ({
+            this.defaultSortParams = sortCols.map(col => ({
                 name: col.name,
                 dir: col.sortDirection
             }));
@@ -86,14 +98,13 @@ export default class Table extends Component {
         }
     }
 
-
     multiSort = (arr, sortParams) => {
         if (!sortParams.length) {
             return arr.slice();
         }
 
-        const cols = sortParams.map((col) => col.name);
-        const dirs = sortParams.map((col) => col.dir);
+        const cols = sortParams.map(col => col.name);
+        const dirs = sortParams.map(col => col.dir);
 
         const sortRecursive = (a, b, cols, dirs, index) => {
             const col = cols[index];
@@ -101,28 +112,29 @@ export default class Table extends Component {
             let x = a.data[col];
             let y = b.data[col];
 
-            if (typeof x === 'string' || typeof y === 'string') {
-                x = x === null ? '' : x.toLowerCase();
-                y = y === null ? '' : y.toLowerCase();
+            if (typeof x === "string" || typeof y === "string") {
+                x = x === null ? "" : x.toLowerCase();
+                y = y === null ? "" : y.toLowerCase();
             }
 
             if (x < y) {
-                return dir === 'DESC' ? 1 : -1;
+                return dir === "DESC" ? 1 : -1;
             }
 
             if (x > y) {
-                return dir === 'DESC' ? -1 : 1;
+                return dir === "DESC" ? -1 : 1;
             }
 
             return cols.length - 1 > index ? sortRecursive(a, b, cols, dirs, index + 1) : a.i - b.i;
-        }
+        };
 
         let sortArr = arr.map((data, i) => ({ data, i })); //mapping needed to make sort stable for equal values
         sortArr.sort((a, b) => sortRecursive(a, b, cols, dirs, 0));
         return sortArr.map(el => el.data);
-    }
+    };
 
-    headerMouseDownHandler = (event, colName) => { //sort handler
+    headerMouseDownHandler = (event, colName) => {
+        //sort handler
         event.preventDefault();
 
         let sortParams = this.state.sortParams.slice();
@@ -131,24 +143,28 @@ export default class Table extends Component {
             if (sortIndex === -1) {
                 sortParams.push({
                     name: colName,
-                    dir: 'ASC'
+                    dir: "ASC"
                 });
-            } else if (sortParams[sortIndex].dir === 'ASC') {
-                sortParams[sortIndex].dir = 'DESC';
+            } else if (sortParams[sortIndex].dir === "ASC") {
+                sortParams[sortIndex].dir = "DESC";
             } else {
                 sortParams.splice(sortIndex, 1);
             }
         } else {
             if (sortIndex === -1) {
-                sortParams = [{
-                    name: colName,
-                    dir: 'ASC'
-                }];
-            } else if (sortParams[sortIndex].dir === 'ASC') {
-                sortParams = [{
-                    name: colName,
-                    dir: 'DESC'
-                }];
+                sortParams = [
+                    {
+                        name: colName,
+                        dir: "ASC"
+                    }
+                ];
+            } else if (sortParams[sortIndex].dir === "ASC") {
+                sortParams = [
+                    {
+                        name: colName,
+                        dir: "DESC"
+                    }
+                ];
             } else {
                 sortParams = [];
             }
@@ -162,9 +178,10 @@ export default class Table extends Component {
             selected: selected,
             sortParams: sortParams
         });
-    }
+    };
 
-    rowMouseDownHandler = (event, row, pageFirstRow, pageLastRow) => { //select handler
+    rowMouseDownHandler = (event, row, pageFirstRow, pageLastRow) => {
+        //select handler
         let selected = this.state.selected.slice();
 
         if (event.ctrlKey) {
@@ -174,16 +191,18 @@ export default class Table extends Component {
             event.preventDefault();
             const selectedRowIndex = selected.indexOf(row);
             const selectedOnPage = selected.filter(i => i >= pageFirstRow && i <= pageLastRow);
-            const lastSelectedRow = selectedOnPage.length ? selectedOnPage[selectedOnPage.length - 1] : row;
+            const lastSelectedRow = selectedOnPage.length
+                ? selectedOnPage[selectedOnPage.length - 1]
+                : row;
 
-            const selectAction = (i) => {
+            const selectAction = i => {
                 const selectedI = selected.indexOf(i);
                 if (selectedRowIndex === -1) {
                     selectedI === -1 && selected.push(i);
                 } else {
                     row !== i && selected.splice(selectedI, 1);
                 }
-            }
+            };
 
             if (row > lastSelectedRow) {
                 for (let i = lastSelectedRow; i <= row; i++) {
@@ -200,31 +219,35 @@ export default class Table extends Component {
         }
 
         this.setState({ selected: selected });
-    }
+    };
 
-    pageClickHandler = (event, button) => { //paginator handler
+    pageClickHandler = (event, button) => {
+        //paginator handler
         event.preventDefault();
         this.setState(prevState => {
             switch (button) {
-                case 'back': return { currentPage: prevState.currentPage - 1 };
-                case 'forward': return { currentPage: prevState.currentPage + 1 };
-                default: return { currentPage: button }
+                case "back":
+                    return { currentPage: prevState.currentPage - 1 };
+                case "forward":
+                    return { currentPage: prevState.currentPage + 1 };
+                default:
+                    return { currentPage: button };
             }
-        })
-    }
+        });
+    };
 
-    toolbarShow = () => this.setState({ toolbarShow: true })
-    toolbarHide = () => this.setState({ toolbarShow: false })
+    toolbarShow = () => this.setState({ toolbarShow: true });
+    toolbarHide = () => this.setState({ toolbarShow: false });
 
-    csvExportHandler = (event) => {
+    csvExportHandler = event => {
         const { cols, rows } = this.state;
 
-        let table = 'No data specified';
+        let table = "No data specified";
         if (cols.length) {
             const totalRows = rows.length;
 
             //head
-            const thead = cols.map(col => '"' + String(col.title) + '"').join(';');
+            const thead = cols.map(col => '"' + String(col.title) + '"').join(";");
 
             //body
             let tbody = [];
@@ -238,61 +261,52 @@ export default class Table extends Component {
                         cells.push('" "');
                     }
                 }
-                tbody.push(cells.join(';'));
+                tbody.push(cells.join(";"));
             }
 
             table = `${thead}\r\n${tbody.join("\r\n")}`;
         }
 
-        const uri = 'data:application/csv;charset=utf-8;base64,';
-        const base64 = (s) => window.btoa(unescape(encodeURIComponent(s)));
+        const uri = "data:application/csv;charset=utf-8;base64,";
+        const base64 = s => window.btoa(unescape(encodeURIComponent(s)));
 
         let link = document.createElement("a");
         link.download = "export.csv";
         link.href = uri + base64(table);
         link.click();
-    }
+    };
 
-    selectAllHandler = (event) => {
+    selectAllHandler = event => {
         let selected = [];
         if (!this.state.selected.length) {
             for (let i = 0; i < this.state.rows.length; i++) {
                 selected.push(i);
             }
         }
-        this.setState({ selected: selected })
-    }
+        this.setState({ selected: selected });
+    };
 
-    defaultSortHandler = (event) => {
+    defaultSortHandler = event => {
         this.setState({
             rows: this.multiSort(this.state.rows, this.defaultSortParams),
-            sortParams: this.defaultSortParams,
+            sortParams: this.defaultSortParams
         });
-    }
+    };
 
     render() {
+        const { cols, rows, totalPages, currentPage } = this.state;
+        const { title, rowsPerPage, selectable, csvExport } = this.props;
+
         if (this.state.isEmpty) {
             return <div>{this.props.emptyTableMessage}</div>;
         }
 
-        const {
-            cols,
-            rows,
-            totalPages,
-            currentPage
-        } = this.state;
-
         const totalCols = cols.length;
         const totalRows = rows.length;
 
-        const {
-            rowsPerPage,
-            selectable,
-            csvExport
-        } = this.props;
-
         const pageFirstRow = (currentPage - 1) * rowsPerPage;
-        const pageLastRow = totalRows < pageFirstRow + rowsPerPage ? totalRows : pageFirstRow + rowsPerPage;
+        const pageLastRow =
+            totalRows < pageFirstRow + rowsPerPage ? totalRows : pageFirstRow + rowsPerPage;
 
         let cells = [];
 
@@ -300,42 +314,53 @@ export default class Table extends Component {
         let thead = [];
         for (const col of cols) {
             let sortObj = this.state.sortParams.find(el => el.name === col.name);
-            let sort = '';
+            let sort = "";
             if (sortObj !== undefined) {
                 switch (sortObj.dir) {
-                    case 'ASC': sort = '\u2197'; break;
-                    case 'DESC': sort = '\u2198'; break;
-                    default: sort = '';
+                    case "ASC":
+                        sort = "\u2197";
+                        break;
+                    case "DESC":
+                        sort = "\u2198";
+                        break;
+                    default:
+                        sort = "";
                 }
             }
             cells.push(
                 <th
                     key={`th${col.name}`}
-                    onMouseDown={event => this.headerMouseDownHandler(event, col.name)}>
+                    onMouseDown={event => this.headerMouseDownHandler(event, col.name)}
+                >
                     {[col.title, sort]}
                 </th>
             );
-        };
+        }
         thead = <tr key="thr">{cells}</tr>;
 
         //footer
         let paginator = null;
         if (totalPages > 1) {
-            paginator =
+            paginator = (
                 <Paginator
                     cp={currentPage}
                     tp={totalPages}
-                    pageClickHandler={this.pageClickHandler} />;
+                    pageClickHandler={this.pageClickHandler}
+                />
+            );
         }
-        let tfoot =
+        let tfoot = (
             <tr key="tfr">
                 <td colSpan={totalCols}>
                     <div className={classes.Footer}>
-                        <div className={classes.Legend}>Rows {pageFirstRow + 1} to {pageLastRow} of {totalRows}</div>
+                        <div className={classes.Legend}>
+                            Rows {pageFirstRow + 1} to {pageLastRow} of {totalRows}
+                        </div>
                         {paginator}
                     </div>
                 </td>
-            </tr>;
+            </tr>
+        );
 
         //body
         let tbody = [];
@@ -350,18 +375,9 @@ export default class Table extends Component {
                 let value = col.formatter ? col.formatter(col, row) : row[col.name];
 
                 if (col.html) {
-                    cells.push(
-                        <td
-                            key={tdKey}
-                            dangerouslySetInnerHTML={{ __html: value }}>
-                        </td>
-                    );
+                    cells.push(<td key={tdKey} dangerouslySetInnerHTML={{ __html: value }} />);
                 } else {
-                    cells.push(
-                        <td key={tdKey}>
-                            {value}
-                        </td>
-                    );
+                    cells.push(<td key={tdKey}>{value}</td>);
                 }
             }
 
@@ -375,33 +391,48 @@ export default class Table extends Component {
             tbody.push(
                 <tr
                     key={`tbr${i}`}
-                    className={attachedClasses.join(' ')}
-                    onMouseDown={selectable ? event => this.rowMouseDownHandler(event, i, pageFirstRow, pageLastRow) : null}>
+                    className={attachedClasses.join(" ")}
+                    onMouseDown={
+                        selectable
+                            ? event => this.rowMouseDownHandler(event, i, pageFirstRow, pageLastRow)
+                            : null
+                    }
+                >
                     {cells}
                 </tr>
             );
         }
 
         return (
-            <div
-                className={classes.Container}
-                onMouseEnter={this.toolbarShow}
-                onMouseLeave={this.toolbarHide}>
-                <table
-                    className={classes.Table}>
-                    <thead ref={this.refHeader} onMouseEnter={this.toolbarShow}>{thead}</thead>
-                    <tfoot onMouseEnter={this.toolbarHide}>{tfoot}</tfoot>
-                    <tbody ref={this.refBody} onMouseEnter={this.toolbarShow}>{tbody}</tbody>
-                </table>
-                <Toolbar
-                    show={this.state.toolbarShow}
-                    defaultTop={this.state.headerHeight}
-                    boundaryTop={this.state.bodyTop}
-                    boundaryBottom={this.state.bodyTop + this.state.bodyHeight}
-                    defaultSortHandler={this.defaultSortHandler}
-                    csvExportHandler={csvExport ? this.csvExportHandler : null}
-                    selectAllHandler={selectable ? this.selectAllHandler : null} />
-            </div>
+            <React.Fragment>
+                <h1>{title}</h1>
+                <ErrorBoundary>
+                    <div
+                        className={classes.Container}
+                        onMouseEnter={this.toolbarShow}
+                        onMouseLeave={this.toolbarHide}
+                    >
+                        <table className={classes.Table}>
+                            <thead ref={this.refHeader} onMouseEnter={this.toolbarShow}>
+                                {thead}
+                            </thead>
+                            <tfoot onMouseEnter={this.toolbarHide}>{tfoot}</tfoot>
+                            <tbody ref={this.refBody} onMouseEnter={this.toolbarShow}>
+                                {tbody}
+                            </tbody>
+                        </table>
+                        <Toolbar
+                            show={this.state.toolbarShow}
+                            defaultTop={this.state.headerHeight}
+                            boundaryTop={this.state.bodyTop}
+                            boundaryBottom={this.state.bodyTop + this.state.bodyHeight}
+                            defaultSortHandler={this.defaultSortHandler}
+                            csvExportHandler={csvExport ? this.csvExportHandler : null}
+                            selectAllHandler={selectable ? this.selectAllHandler : null}
+                        />
+                    </div>
+                </ErrorBoundary>
+            </React.Fragment>
         );
     }
 }

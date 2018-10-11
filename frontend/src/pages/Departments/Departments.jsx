@@ -1,35 +1,52 @@
-import React, { Component } from "react";
+import React from "react";
+import { Query } from "react-apollo";
+import gql from "graphql-tag";
 
 import Spinner from "../../components/UI/Spinner/Spinner";
-import Table from "../../containers/Table/Table";
-
+import Table from "../../components/Table/Table";
 import classes from "./Departments.css";
 
-import { graphql, compose } from "react-apollo";
+const LIST_DEPARTMENTS = gql`
+    query {
+        listDepartments {
+            cols {
+                name
+                title
+                defaultContent
+                sortOrder
+                sortDirection
+                frontendFormatter
+                html
+            }
+            rows {
+                d_id
+                d_title
+                d_head
+                d_size
+                d_created
+            }
+        }
+    }
+`;
 
-import ListDepartmentsQuery from "../../queries/ListDepartments";
+const Departments = () => (
+    <Query query={LIST_DEPARTMENTS}>
+        {({ loading, error, data }) => {
+            if (loading) return <Spinner />;
+            if (error) throw error;
 
-export class Departments extends Component {
-	render() {
-		let departments = <Spinner />;
-		const { listDepartments: data, error } = this.props.data;
+            return (
+                <div className={classes.TableContainer}>
+                    <Table
+                        title="Departments"
+                        selectable={true}
+                        emptyTableMessage="No departments found"
+                        {...data.listDepartments}
+                    />
+                </div>
+            );
+        }}
+    </Query>
+);
 
-		if (error) {
-			throw error;
-		} else if (data) {
-			departments = (
-				<Table
-					title="Departments"
-					emptyTableMessage="No departments found"
-					{...this.props.data.listDepartments}
-				/>
-			);
-		}
-
-		return <div className={classes.TableContainer}>{departments}</div>;
-	}
-}
-
-const gqlListDepartments = graphql(ListDepartmentsQuery);
-
-export default compose(gqlListDepartments)(Departments);
+export default Departments;

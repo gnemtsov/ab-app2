@@ -5,7 +5,7 @@
     "main": "index.js",
     "author": "ERP-LAB",
     "scripts": {
-        "dev": "nodemon -w .. -e js,yaml,gql,yml -- appsync-local.js -q"
+        "start": "nodemon -w .. -e js,yaml,gql,yml -- appsync-local.js -q"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",

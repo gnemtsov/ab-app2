@@ -214,7 +214,7 @@ Object.keys(cfTemplate.Resources).forEach(name => {
                 return;
             }
 
-            console.log("Invoking lambda function with the payload...");
+            console.log("Invoking lambda function with payload...");
             const response = await axios.post(lambdaEndpoint, payload, {
                 headers: {
                     Accept: "application/json",

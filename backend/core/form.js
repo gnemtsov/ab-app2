@@ -1,9 +1,17 @@
-'use strict';
+"use strict";
 
 const fs = require("fs");
-const DB = require('core/db');
-const U = require('core/utils');
-const VALIDATORS = require('forms/validators');
+const DB = require("core/db");
+const U = require("core/utils");
+const VALIDATORS = require("forms/validators");
+
+//returns error object
+const invalidField = (fieldName, fieldMessage) => ({
+    type: "Invalid form field",
+    fieldName,
+    fieldMessage
+});
+exports.invalidField = invalidField;
 
 //returns form fields
 exports.getAsObject = (formName, params = []) => {
@@ -13,12 +21,13 @@ exports.getAsObject = (formName, params = []) => {
     //fetch fields values from DB
     const sqlFile = `forms/sql/${formName}.sql`; //sql
     if (fs.existsSync(sqlFile)) {
-        const sql = fs.readFileSync(`forms/sql/${formName}.sql`, 'utf8');
+        const sql = fs.readFileSync(`forms/sql/${formName}.sql`, "utf8");
         dbPromises.push(
-            DB.connect().then(conn => conn.execute(sql, params))
+            DB.connect()
+                .then(conn => conn.execute(sql, params))
                 .then(([rows]) => {
                     if (rows.length === 1) {
-                        fields.forEach(field => field.value = rows[0][field.name]);
+                        fields.forEach(field => (field.value = rows[0][field.name]));
                     }
                 })
         );
@@ -44,47 +53,39 @@ exports.getAsObject = (formName, params = []) => {
 //returns Promise
 exports.isValid = (formName, data) => {
     const fields = require(`forms/${formName}.json`);
-    return addDBValidators(fields)
-        .then(() => {
-            for (const field of fields) {
-                const {
-                    name: fieldName,
-                    required,
-                    validators = [],
-                } = field;
+    return addDBValidators(fields).then(() => {
+        for (const field of fields) {
+            const { name: fieldName, required, validators = [] } = field;
 
-                const value = data[fieldName];
+            const value = data[fieldName];
 
-                if (value === undefined || value === '') {
-                    if (required) {
-                        return {name: fieldName, message: 'Value is required'};
-                    } else {
-                        continue;
-                    }
-                }
-
-                if (validators.length) {
-                    for (var i = 0; i < validators.length; i++) {
-                        const { name: validatorName, message, params = [] } = validators[i];
-                        if (!VALIDATORS[validatorName](value, ...params)) {
-                            return {
-                                name: fieldName,
-                                message: message.replace(/%([0-9]+)%/g, (...args) => params[Number(args[1])])
-                            };
-                        }
-                    }
+            if (value === undefined || value === "") {
+                if (required) {
+                    return { name: fieldName, message: "Value is required" };
+                } else {
+                    continue;
                 }
             }
 
-            return {name: null, message: null};
-        });
+            if (validators.length) {
+                for (var i = 0; i < validators.length; i++) {
+                    const { name: validatorName, message, params = [] } = validators[i];
+                    if (!VALIDATORS[validatorName](value, ...params)) {
+                        return invalidField(
+                            fieldName,
+                            message.replace(/%([0-9]+)%/g, (...args) => params[Number(args[1])])
+                        );
+                    }
+                }
+            }
+        }
+    });
 };
-
 
 /*-----Supplementary functions-----*/
 //adds validators, based on info from SHOW COLUMNS query
-const addDBValidators = (fields) => {
-    const regexps = require('forms/dbs/mariadb');
+const addDBValidators = fields => {
+    const regexps = require("forms/dbs/mariadb");
     let dbPromises = [];
     let tablesList = [];
     for (const field of fields) {
@@ -92,10 +93,11 @@ const addDBValidators = (fields) => {
         if (table !== undefined && !tablesList.includes(table)) {
             tablesList.push(table);
             dbPromises.push(
-                DB.connect().then(conn => conn.execute(`SHOW COLUMNS FROM ${table}`))
+                DB.connect()
+                    .then(conn => conn.execute(`SHOW COLUMNS FROM ${table}`))
                     .then(([rows]) => {
                         let tableCols = {};
-                        rows.forEach(col => tableCols[col.Field] = col);
+                        rows.forEach(col => (tableCols[col.Field] = col));
 
                         fields.forEach(field => {
                             const col = tableCols[field.name];
@@ -103,33 +105,39 @@ const addDBValidators = (fields) => {
                                 for (const regexp of regexps) {
                                     const regexpResult = regexp.regexp.exec(col.Type);
                                     if (regexpResult) {
-                                        const {
-                                            type,
-                                            allowedValues,
-                                            validators = []
-                                        } = regexp.f(regexpResult);
+                                        const { type, allowedValues, validators = [] } = regexp.f(
+                                            regexpResult
+                                        );
 
-                                        if (field.type !== undefined && field.type !== 'Hidden' && field.type !== type) {
+                                        if (
+                                            field.type !== undefined &&
+                                            field.type !== "Hidden" &&
+                                            field.type !== type
+                                        ) {
                                             throw new Error(`Field and db column types mismatch.`);
                                         }
                                         field.type = U.coalesce(field.type, type);
 
-                                        field.allowedValues = U.coalesce(field.allowedValues, allowedValues);
+                                        field.allowedValues = U.coalesce(
+                                            field.allowedValues,
+                                            allowedValues
+                                        );
 
                                         field.required = U.coalesce(
                                             field.required,
-                                            col.Null === 'NO' && col.Default === null && col.Extra !== 'auto_increment'
+                                            col.Null === "NO" &&
+                                                col.Default === null &&
+                                                col.Extra !== "auto_increment"
                                         );
 
                                         field.validators =
-                                            field.validators === undefined ?
-                                                validators :
-                                                validators.concat(field.validators);
+                                            field.validators === undefined
+                                                ? validators
+                                                : validators.concat(field.validators);
                                         break;
                                     }
                                 }
                             }
-
                         });
                     })
             );

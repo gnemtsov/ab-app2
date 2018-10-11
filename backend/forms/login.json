@@ -15,7 +15,7 @@
     },
     {
         "name": "u_password",
-        "label": "Passord",
+        "label": "Password",
         "noEcho": true,
         "type": "String",
         "value": "abapp",

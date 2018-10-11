@@ -45,11 +45,10 @@ exports.handler = (event, context, callback) => {
         console.error(`>>>>>> ${type} <<<<<<`);
         console.error(`${err.message}`);
         err.stack.forEach(c => {
-            console.error(
-                `| ${c.getLineNumber()}:${c.getColumnNumber()} ${c.getEvalOrigin()}`
-            );
+            console.error(`| ${c.getLineNumber()}:${c.getColumnNumber()} ${c.getEvalOrigin()}`);
         });
         console.error(`<<<<<< ${type.replace(/.+?/g, "-")} >>>>>>`);
+        console.log();
 
         // if c.getThis() returns a cyclic object,
         // error would be thrown in callback, and client would get 502.
@@ -81,56 +80,60 @@ exports.handler = (event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
+    //current datetime
+    const d = new Date();
+    console.log(`Time: ${d.toTimeString()}`);
+
+    //parse event
+    const {
+        module: apiModule,
+        action: apiAction,
+        headers,
+        identity,
+        arguments: apiArguments
+    } = event;
+
+    let logHeaders = {};
+    if (headers !== undefined && headers !== null) {
+        Object.keys(headers).map(function(key, index) {
+            const value =
+                key === "x-amz-security-token"
+                    ? headers[key].substring(0, 15) + "...[truncated]"
+                    : headers[key];
+            logHeaders[key] = value;
+        });
+    }
+
+    console.log(`***************Request***************`);
+    console.log(`Client -----Event-----> API[${apiModule}/${apiAction}]`);
+    console.log(`Identity: ${JSON.stringify(identity)}`);
+    console.log(`Headers: ${JSON.stringify(logHeaders)}`);
+    console.log(`Arguments: ${JSON.stringify(apiArguments)}`);
+    console.log(`*************************************`);
+    console.log();
+
+    //callback wrapper
+    const callbackWrapper = (error, result) => {
+        console.log(`**************Response***************`);
+        if (error === null) {
+            console.log(`Client <--- Data <--- API[${apiModule}/${apiAction}]`);
+            console.log(`Data: ${JSON.stringify(result)}`);
+            callback(null, result);
+        } else {
+            if (typeof error === "string") {
+                error = {
+                    type: error
+                };
+            }
+            console.log(`Client <--- Error <--- API[${apiModule}/${apiAction}]`);
+            console.log(`Error: ${JSON.stringify(error)}`);
+            callback(JSON.stringify(error));
+        }
+        console.log(`*************************************`);
+    };
+
     //main
     try {
-        //current datetime
-        const d = new Date();
-        console.log(`Time: ${d.toTimeString()}`);
-
-        //parse event
-        const {
-            module: apiModule,
-            action: apiAction,
-            headers,
-            identity,
-            arguments: apiArguments
-        } = event;
-
-        let logHeaders = {};
-        if (headers !== undefined && headers !== null) {
-            Object.keys(headers).map(function(key, index) {
-                const value =
-                    key === "x-amz-security-token"
-                        ? headers[key].substring(0, 15) + "...[truncated]"
-                        : headers[key];
-                logHeaders[key] = value;
-            });
-        }
-
-        console.log(`***************Request***************`);
-        console.log(`Client -----Event-----> API[${apiModule}/${apiAction}]`);
-        console.log(`Identity: ${JSON.stringify(identity)}`);
-        console.log(`Headers: ${JSON.stringify(logHeaders)}`);
-        console.log(`Arguments: ${JSON.stringify(apiArguments)}`);
-        console.log();
-
-        //callback wrapper
-        const callbackWrapper = (error, result) => {
-            console.log(`**************Response***************`);
-            if (error === null) {
-                console.log(
-                    `Client <--- Data <--- API[${apiModule}/${apiAction}]`
-                );
-                console.log(`Data: ${JSON.stringify(result)}`);
-            } else {
-                console.log(
-                    `Client <--- Error <--- API[${apiModule}/${apiAction}]`
-                );
-                console.log(`Error: ${JSON.stringify(error)}`);
-            }
-            console.log(`*************************************`);
-            return callback(error, result);
-        };
         //Check if API module and action exist
         const modulePath = "api/" + apiModule;
         if (!fs.existsSync(modulePath)) {

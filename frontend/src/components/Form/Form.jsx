@@ -15,7 +15,8 @@ class AbForm extends Component {
     static defaultProps = {
         infoIcon: <Icon name="info" width="26" height="26" stroke="#666666" />,
         layout: "Horizontal",
-        doneText: "Done!",
+        successText: "Success!",
+        failureText: "Failure!",
         buttonText: ["Submit", "Sending..."],
         dataId: 0,
         className: ""
@@ -25,7 +26,8 @@ class AbForm extends Component {
         infoIcon: PropTypes.node,
         layout: PropTypes.oneOf(["Horizontal", "Inline"]),
         buttonText: PropTypes.array,
-        doneText: PropTypes.string,
+        successText: PropTypes.string,
+        failureText: PropTypes.string,
         className: PropTypes.string,
         formName: PropTypes.string.isRequired,
         dataId: PropTypes.number,
@@ -39,8 +41,8 @@ class AbForm extends Component {
 
         this.gqlClient = this.props.client;
         this.state = {
-            submitted: false,
             status: "loading", //possible options: valid, invalid, loading, sending
+            submit: undefined, //possible options: success, failure, undefined
             fields: []
         };
     }
@@ -168,7 +170,7 @@ class AbForm extends Component {
                 values[name] = value;
             }
 
-            let variables;
+            let variables = {};
             if (this.props.inputObjectName === undefined) {
                 variables = values;
             } else {
@@ -202,17 +204,17 @@ class AbForm extends Component {
                             });
                         }
                         return {
-                            submitted: true,
+                            submit: "success",
                             status: this.getFieldsValidity(fields),
                             fields
                         };
                     });
-                    this.timerId = setTimeout(() => this.setState({ submitted: false }), 2000);
+                    this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                 })
                 .catch(error => {
                     let [{ message }] = error.graphQLErrors;
-                    const {type, fieldName, fieldMessage} = JSON.parse(message);
-                    if(type === 'Invalid form field'){
+                    const { type, fieldName, fieldMessage } = JSON.parse(message);
+                    if (type === "Invalid form field") {
                         //server invalidated a form field
                         this.setState(prevState => {
                             const i = prevState.fields.findIndex(field => fieldName === field.name);
@@ -226,6 +228,8 @@ class AbForm extends Component {
                             };
                         });
                     } else {
+                        this.setState({ status: "valid", submit: "failure" });
+                        this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                         throw error;
                     }
                 });
@@ -262,12 +266,23 @@ class AbForm extends Component {
                 formElements.push(element);
             }
 
-            //done text classes
+            //done text
+            let doneText = "";
             const doneTextClasses = [classes.DoneText];
-            if (this.state.submitted) {
-                doneTextClasses.push(classes.Visible);
+            switch (this.state.submit) {
+                case "success":
+                    doneTextClasses.push(classes.Green);
+                    doneTextClasses.push(classes.Visible);
+                    doneText = this.props.successText;
+                    break;
+                case "failure":
+                    doneTextClasses.push(classes.Red);
+                    doneTextClasses.push(classes.Visible);
+                    doneText = this.props.failureText;
+                    break;
             }
 
+            //form
             form = [
                 <form
                     key="AbForm"
@@ -288,7 +303,7 @@ class AbForm extends Component {
                                 ? this.props.buttonText[1]
                                 : this.props.buttonText[0]}
                         </Button>
-                        <span className={doneTextClasses.join(" ")}>{this.props.doneText}</span>
+                        <span className={doneTextClasses.join(" ")}>{doneText}</span>
                     </div>
                 </form>,
                 <ReactTooltip

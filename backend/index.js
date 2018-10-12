@@ -56,7 +56,7 @@ exports.handler = (event, context, callback) => {
         //const errorInfo = buildErrorInfo(err);
         // TODO: log errorInfo to S3
 
-        return callbackWrapper("Something went wrong");
+        return callbackWrapper({ type: "Internal Server Error", message: "Something went wrong" });
     };
 
     if (process.listenerCount("unhandledRejection") === 0) {
@@ -120,14 +120,11 @@ exports.handler = (event, context, callback) => {
             console.log(`Data: ${JSON.stringify(result)}`);
             callback(null, result);
         } else {
-            if (typeof error === "string") {
-                error = {
-                    type: error
-                };
-            }
+            const errorObj =
+                typeof error === "string" ? { type: "Unspecified", message: error } : error;
             console.log(`Client <--- Error <--- API[${apiModule}/${apiAction}]`);
-            console.log(`Error: ${JSON.stringify(error)}`);
-            callback(JSON.stringify(error));
+            console.log(`Error: ${JSON.stringify(errorObj)}`);
+            callback(JSON.stringify(errorObj));
         }
         console.log(`*************************************`);
     };
@@ -137,11 +134,17 @@ exports.handler = (event, context, callback) => {
         //Check if API module and action exist
         const modulePath = "api/" + apiModule;
         if (!fs.existsSync(modulePath)) {
-            return callbackWrapper(`Module "${modulePath}" not found.`);
+            return callbackWrapper({
+                type: "Not Found",
+                message: `Module "${modulePath}" not found.`
+            });
         }
         const actionPath = modulePath + "/" + apiAction + ".js";
         if (!fs.existsSync(actionPath)) {
-            return callbackWrapper(`Action "${actionPath}" not found.`);
+            return callbackWrapper({
+                type: "Not found",
+                message: `Action "${actionPath}" not found.`
+            });
         }
 
         //Authorization check

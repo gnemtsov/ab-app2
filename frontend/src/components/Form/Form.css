@@ -13,7 +13,7 @@
 .Form input[type="password"],
 .Form select,
 .Form textarea {
-    font-family: 'Arimo', sans-serif;
+    font-family: "Arimo", sans-serif;
 }
 
 .Form.Horizontal {
@@ -37,7 +37,7 @@
     align-items: flex-start;
 }
 
-.Form.Inline>.FormElement {
+.Form.Inline > .FormElement {
     display: flex;
     margin-right: 1.5rem;
     align-items: flex-start;
@@ -84,11 +84,18 @@
 }
 
 .DoneText {
-    color: green;
     margin-left: 1rem;
     font-weight: bold;
     opacity: 0;
     transition: opacity 0.5s linear;
+}
+
+.Green {
+    color: green;
+}
+
+.Red {
+    color: red;
 }
 
 .DoneText.Visible {

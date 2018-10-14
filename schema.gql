@@ -34,11 +34,6 @@ type FormField {
 	validators: [FieldValidator]
 }
 
-type InvalidFormField {
-    name: String
-	message: String
-}
-
 type TableCol {
     name: String!
     title: String
@@ -57,13 +52,18 @@ type DepartmentsTable {
 type Mutation {
 	login(u_login: String!, u_password: String!): AuthToken
 	token(sub: String!, refreshToken: String!): AuthToken
-	add(department: DepartmentInput!): InvalidFormField
-	edit(department: DepartmentInput!): InvalidFormField
+	add(department: DepartmentInput!): Department!
+	edit(department: DepartmentInput!): Department!
 }
 
 type Query {
 	getForm(formName: String!, dataId: Int): [FormField]
 	listDepartments: DepartmentsTable
+}
+
+type Subscription {
+	newEdit: Department
+	@aws_subscribe(mutations: ["edit"])
 }
 
 type Token {
@@ -89,4 +89,5 @@ type User {
 schema {
 	query: Query
 	mutation: Mutation
+	subscription: Subscription
 }

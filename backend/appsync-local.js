@@ -1,9 +1,13 @@
-const { ApolloServer } = require("apollo-server");
+const { ApolloServer, PubSub } = require("apollo-server");
+var { Source } = require("graphql");
 const velocity = require("velocityjs");
 const yaml = require("js-yaml");
 const axios = require("axios");
 const chalk = require("chalk");
 const fs = require("fs");
+
+const { visit } = require("graphql/language/visitor");
+const { parse } = require("graphql/language");
 
 require("dotenv").config();
 
@@ -13,6 +17,8 @@ const options = {
 process.argv.forEach(option => {
     if (option === "-q" || option === "--quiet") options.quiet = true;
 });
+
+const pubsub = new PubSub();
 
 const CF_SCHEMA = yaml.Schema.create([
     new yaml.Type("!Ref", {
@@ -107,6 +113,64 @@ const CF_SCHEMA = yaml.Schema.create([
 
 //Read GraphQL schema
 const typeDefs = fs.readFileSync("../schema.gql", "utf8");
+const schemaAST = parse(typeDefs);
+
+//Fill in subscriptions from the Schema
+let subscriptions = {
+    Query: {},
+    Mutation: {}
+};
+let eventLists = {};
+const visitor = {
+    enter(node, key, parent, path, ancestors) {
+        if (node.kind === "ObjectTypeDefinition" && node.name.value === "Subscription") {
+            node.fields.forEach(node => {
+                if (node.kind === "FieldDefinition") {
+                    const subscriptionName = node.name.value;
+                    node.directives.forEach(node => {
+                        if (node.name.value === "aws_subscribe") {
+                            node.arguments.forEach(node => {
+                                let operationType;
+                                switch (node.name.value) {
+                                    case "queries":
+                                        operationType = "Query";
+                                        break;
+                                    case "mutations":
+                                        operationType = "Mutation";
+                                        break;
+                                }
+                                if (operationType) {
+                                    node.value.values.forEach(node => {
+                                        if (
+                                            subscriptions[operationType][node.value] === undefined
+                                        ) {
+                                            subscriptions[operationType][node.value] = [
+                                                subscriptionName
+                                            ];
+                                        } else {
+                                            subscriptions[operationType][node.value].push(
+                                                subscriptionName
+                                            );
+                                        }
+
+                                        const eventName = operationType + "_" + node.value;
+                                        if (eventLists[subscriptionName] === undefined) {
+                                            eventLists[subscriptionName] = [eventName];
+                                        } else {
+                                            eventLists[subscriptionName].push(eventName);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    }
+};
+
+visit(schemaAST, visitor);
 
 //Read CloudFront template
 const cfTemplate = yaml.load(fs.readFileSync("../template.yml", "utf8"), {
@@ -119,23 +183,26 @@ Object.keys(cfTemplate.Resources).forEach(name => {
     const R = cfTemplate.Resources[name];
     if (R.Type === "AWS::AppSync::DataSource") {
         const {
-            Properties: {
-                LambdaConfig: {
-                    LambdaFunctionArn: {
-                        "Fn::GetAtt": [functionName]
-                    }
-                }
-            }
+            Properties: { LambdaConfig }
         } = R;
 
-        if (functionName !== undefined) {
-            dataSources[name] = functionName;
+        if (LambdaConfig !== undefined) {
+            const {
+                LambdaFunctionArn: {
+                    "Fn::GetAtt": [functionName]
+                }
+            } = LambdaConfig;
+
+            if (functionName !== undefined) {
+                dataSources[name] = functionName;
+            }
         }
     }
 });
 
 //Fill in resolvers from CF template
 let resolvers = {
+    Subscription: {},
     Query: {},
     Mutation: {}
 };
@@ -152,19 +219,6 @@ Object.keys(cfTemplate.Resources).forEach(name => {
             }
         } = R;
 
-        //local lambda endpoint for the resolver
-        let lambdaEndpoint;
-        if (dataSources[dataSourceName] !== undefined) {
-            lambdaEndpoint = `http://${process.env.LOCAL_LAMBDA_HOST}:${
-                process.env.LOCAL_LAMBDA_PORT
-            }/2015-03-31/functions/${dataSources[dataSourceName]}/invocations`;
-        } else {
-            console.log(
-                chalk.black.bgYellow("WARNING"),
-                `Lambda endpoint is not defined for the ${fieldName} resolver`
-            );
-        }
-
         //resolver mapping template
         let {
             Properties: { RequestMappingTemplate: requestMappingTemplate }
@@ -174,80 +228,121 @@ Object.keys(cfTemplate.Resources).forEach(name => {
             "$2"
         );
 
-        //resolver function
-        resolvers[typeName][fieldName] = async (root, args, context) => {
-            const d = new Date();
-            console.log(
-                `Resolver`,
-                chalk.black.bgBlue(fieldName),
-                `executed at ${d.toLocaleTimeString()}`
-            );
-
-            console.log("Rendering velocity template...");
-            let template = velocity.render(requestMappingTemplate, {
-                context: {
-                    arguments: JSON.stringify(args),
-                    request: {
-                        headers: JSON.stringify(context.request.headers)
-                    },
-                    identity: JSON.stringify(context.identity)
-                }
-            });
-            template = JSON.parse(template);
-            const payload = JSON.parse(JSON.stringify(template.payload));
-
-            if (!options.quiet) {
-                const headers = template.payload.headers;
-                if (headers !== undefined && headers !== null) {
-                    Object.keys(headers).map(function(key, index) {
-                        headers[key] =
-                            key === "x-amz-security-token"
-                                ? headers[key].substring(0, 15) + "...[truncated]"
-                                : headers[key];
-                    });
-                }
-                console.log("Resulting template:", JSON.stringify(template));
-            }
-
-            if (lambdaEndpoint === undefined) {
-                console.log("No endpoint defined, nothing to do..");
-                return;
-            }
-
-            console.log("Invoking lambda function with payload...");
-            const response = await axios.post(lambdaEndpoint, payload, {
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json"
-                }
-            });
-
-            const { data } = response;
-            if (data.errorMessage !== undefined) {
-                console.log("Lambda response:", chalk.black.bgRed("ERROR"));
-                console.log("Error: ", JSON.stringify(data));
-                console.log("");
-                throw new Error(data.errorMessage);
+        if (typeName === "Subscription") {
+            resolvers["Subscription"][fieldName] = {
+                subscribe: () => pubsub.asyncIterator(eventLists[fieldName])
+            };
+        } else {
+            //local lambda endpoint for the resolver
+            let lambdaEndpoint;
+            if (dataSources[dataSourceName] !== undefined) {
+                lambdaEndpoint = `http://${process.env.LOCAL_LAMBDA_HOST}:${
+                    process.env.LOCAL_LAMBDA_PORT
+                }/2015-03-31/functions/${dataSources[dataSourceName]}/invocations`;
             } else {
-                console.log("Lambda response:", chalk.black.bgGreen("DATA"));
-                if (!options.quiet) {
-                    console.log("Data: ", JSON.stringify(data));
-                }
-                console.log("");
-                return data;
+                console.log(
+                    chalk.black.bgYellow("WARNING"),
+                    `Lambda endpoint is not defined for the ${fieldName} resolver`
+                );
             }
-        };
+
+            //resolver function
+            resolvers[typeName][fieldName] = async (root, args, context) => {
+                const d = new Date();
+                console.log(
+                    `Resolver`,
+                    chalk.black.bgBlue(fieldName),
+                    `executed at ${d.toLocaleTimeString()}`
+                );
+
+                console.log("Rendering velocity template...");
+                let template = velocity.render(requestMappingTemplate, {
+                    context: {
+                        arguments: JSON.stringify(args),
+                        request: {
+                            headers: JSON.stringify(context.request.headers)
+                        },
+                        identity: JSON.stringify(context.identity)
+                    }
+                });
+                template = JSON.parse(template);
+                const payload = JSON.parse(JSON.stringify(template.payload));
+
+                if (!options.quiet) {
+                    const headers = template.payload.headers;
+                    if (headers !== undefined && headers !== null) {
+                        Object.keys(headers).map(function(key, index) {
+                            headers[key] =
+                                key === "x-amz-security-token"
+                                    ? headers[key].substring(0, 15) + "...[truncated]"
+                                    : headers[key];
+                        });
+                    }
+                    console.log("Resulting template:", JSON.stringify(template));
+                }
+
+                if (lambdaEndpoint === undefined) {
+                    console.log("No endpoint defined, nothing to do..");
+                    return;
+                }
+
+                console.log("Invoking lambda function with payload...");
+                const response = await axios.post(lambdaEndpoint, payload, {
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                const { data } = response;
+                if (data.errorMessage !== undefined) {
+                    console.log("Lambda response:", chalk.black.bgRed("ERROR"));
+                    console.log("Error: ", JSON.stringify(data));
+                    console.log("");
+                    throw new Error(data.errorMessage);
+                } else {
+                    console.log("Lambda response:", chalk.black.bgGreen("DATA"));
+                    if (!options.quiet) {
+                        console.log("Data: ", JSON.stringify(data));
+                    }
+
+                    if (subscriptions[typeName][fieldName] !== undefined) {
+                        const eventName = typeName + "_" + fieldName;
+                        console.log(
+                            `Publishing event "${eventName}" to subscriptions: ${JSON.stringify(
+                                subscriptions[typeName][fieldName]
+                            )}...`
+                        );
+                        subscriptions[typeName][fieldName].forEach(subscriptionName =>
+                            pubsub.publish(eventName, { [subscriptionName]: data })
+                        );
+                    }
+
+                    console.log("");
+                    return data;
+                }
+            };
+        }
     }
 });
 
+console.log(resolvers);
 //creating and starting Apollo-server
 const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({ req }) => ({
-        request: { headers: req.headers },
-        identity: { sourceIp: "127.0.0.1" }
-    })
+    context: async ({ req, connection }) => {
+        console.log("called");
+        if (connection) {
+            return {};
+        } else {
+            return {
+                request: { headers: req.headers },
+                identity: { sourceIp: "127.0.0.1" }
+            };
+        }
+    },
+    tracing: true
 });
 
 server.listen().then(({ url }) => {

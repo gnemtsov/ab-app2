@@ -125,6 +125,13 @@ Resources:
             LambdaConfig:
                 LambdaFunctionArn: !GetAtt [Lambda, Arn]
 
+    AppSyncDataSourceSocket:
+        Type: "AWS::AppSync::DataSource"
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            Name: "ab_app_socket"
+            Type: NONE
+
     AppSyncGetFormQueryResolver:
         Type: "AWS::AppSync::Resolver"
         DependsOn: AppSyncSchema
@@ -250,6 +257,26 @@ Resources:
                   "payload": {
                       "module": "departments",
                       "action": "edit",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $utils.toJson($context.request.headers)
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
+    AppSyncNewEditResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Subscription
+            FieldName: newEdit
+            DataSourceName: !GetAtt [AppSyncDataSourceSocket, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
                       "arguments": $utils.toJson($context.arguments),
                       "identity": $utils.toJson($context.identity),
                       "headers": $utils.toJson($context.request.headers)

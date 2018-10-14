@@ -212,22 +212,24 @@ class AbForm extends Component {
                     this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                 })
                 .catch(error => {
-                    let [{ message }] = error.graphQLErrors;
-                    const { type, fieldName, fieldMessage } = JSON.parse(message);
-                    if (type === "Invalid form field") {
-                        //server invalidated a form field
-                        this.setState(prevState => {
-                            const i = prevState.fields.findIndex(field => fieldName === field.name);
-                            prevState.fields[i] = {
-                                ...prevState.fields[i],
-                                message: fieldMessage
-                            };
-                            return {
-                                status: "invalid",
-                                fields: prevState.fields
-                            };
-                        });
-                    } else {
+                    let {graphQLErrors: [{ message }]} = error;
+                    try{
+                        let errorObj = JSON.parse(message);
+                        if (errorObj.type === "Invalid form field") {
+                            //server invalidated a form field
+                            this.setState(prevState => {
+                                const i = prevState.fields.findIndex(field => errorObj.fieldName === field.name);
+                                prevState.fields[i] = {
+                                    ...prevState.fields[i],
+                                    message: errorObj.fieldMessage
+                                };
+                                return {
+                                    status: "invalid",
+                                    fields: prevState.fields
+                                };
+                            });
+                        }
+                    } catch(e) {
                         this.setState({ status: "valid", submit: "failure" });
                         this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                         throw error;

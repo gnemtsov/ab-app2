@@ -36,7 +36,7 @@ module.exports = (event, context, callback) => {
                         message: "Data was not updated"
                     });
                 } else {
-                    return callback(null, { affectedRows, insertedId });
+                    return callback(null, values);
                 }
             });
     });

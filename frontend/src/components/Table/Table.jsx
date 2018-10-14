@@ -86,6 +86,7 @@ export default class Table extends Component {
     }
 
     componentDidMount() {
+         this.props.subscribeToUpdates();
         if (!this.state.isEmpty) {
             const bodyRect = this.refBody.current.getBoundingClientRect();
             const headerRect = this.refHeader.current.getBoundingClientRect();

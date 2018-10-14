@@ -230,7 +230,15 @@ Object.keys(cfTemplate.Resources).forEach(name => {
 
         if (typeName === "Subscription") {
             resolvers["Subscription"][fieldName] = {
-                subscribe: () => pubsub.asyncIterator(eventLists[fieldName])
+                subscribe: () => {
+                    console.log(
+                        `Resolver`,
+                        chalk.black.bgBlue(fieldName),
+                        `executed at ${d.toLocaleTimeString()}`
+                    );
+                    console.log(`Returned asyncIterator(${eventLists[fieldName]})`);
+                    return pubsub.asyncIterator(eventLists[fieldName]);
+                }
             };
         } else {
             //local lambda endpoint for the resolver
@@ -326,13 +334,11 @@ Object.keys(cfTemplate.Resources).forEach(name => {
     }
 });
 
-console.log(resolvers);
 //creating and starting Apollo-server
 const server = new ApolloServer({
     typeDefs,
     resolvers,
     context: async ({ req, connection }) => {
-        console.log("called");
         if (connection) {
             return {};
         } else {
@@ -342,9 +348,11 @@ const server = new ApolloServer({
             };
         }
     },
+    formatError: error => console.log(error),
     tracing: true
 });
 
-server.listen().then(({ url }) => {
-    console.log(chalk.bold(`Local AppSync ready at ${url}\n`));
+server.listen().then(({ url, subscriptionsUrl }) => {
+    console.log(chalk.bold(`Local AppSync ready at ${url}`));
+    console.log(chalk.bold(`The subscriptions url is ${subscriptionsUrl}\n`));
 });

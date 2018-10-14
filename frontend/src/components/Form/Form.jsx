@@ -212,13 +212,17 @@ class AbForm extends Component {
                     this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                 })
                 .catch(error => {
-                    let {graphQLErrors: [{ message }]} = error;
-                    try{
+                    let {
+                        graphQLErrors: [{ message }]
+                    } = error;
+                    try {
                         let errorObj = JSON.parse(message);
                         if (errorObj.type === "Invalid form field") {
                             //server invalidated a form field
                             this.setState(prevState => {
-                                const i = prevState.fields.findIndex(field => errorObj.fieldName === field.name);
+                                const i = prevState.fields.findIndex(
+                                    field => errorObj.fieldName === field.name
+                                );
                                 prevState.fields[i] = {
                                     ...prevState.fields[i],
                                     message: errorObj.fieldMessage
@@ -229,7 +233,7 @@ class AbForm extends Component {
                                 };
                             });
                         }
-                    } catch(e) {
+                    } catch (e) {
                         this.setState({ status: "valid", submit: "failure" });
                         this.timerId = setTimeout(() => this.setState({ submit: undefined }), 2000);
                         throw error;
@@ -269,7 +273,7 @@ class AbForm extends Component {
             }
 
             //done text
-            let doneText = "";
+            let doneText;
             const doneTextClasses = [classes.DoneText];
             switch (this.state.submit) {
                 case "success":
@@ -282,6 +286,8 @@ class AbForm extends Component {
                     doneTextClasses.push(classes.Visible);
                     doneText = this.props.failureText;
                     break;
+                default:
+                    doneText = "";
             }
 
             //form

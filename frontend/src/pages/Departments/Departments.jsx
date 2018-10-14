@@ -30,8 +30,8 @@ const LIST_DEPARTMENTS = gql`
 `;
 
 const LIST_DEPARTMENTS_SUBSCRIPTION = gql`
-    subscription onNewEdit {
-        Mutation_edit {
+    subscription {
+        newEdit {
             d_id
             d_title
             d_head
@@ -58,9 +58,9 @@ const Departments = () => (
                             subscribeToMore({
                                 document: LIST_DEPARTMENTS_SUBSCRIPTION,
                                 updateQuery: (prev, { subscriptionData }) => {
-                                    console.log(prev);
-                                    if (!subscriptionData.data) return prev;
-                                    const newEdit = subscriptionData.data.newEdit;
+                                    console.log(prev, subscriptionData);
+                                    //if (!subscriptionData.data) return prev;
+                                    //const newEdit = subscriptionData.data.newEdit;
                                     // const i = prev.fields.findIndex(field => fieldName === field.name);
                                     return prev;
 

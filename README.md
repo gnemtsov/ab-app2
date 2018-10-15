@@ -1,22 +1,22 @@
 # Introduction
-AB-APP is an AWS serverless boilerplate application. You can use it as a starting point for your own applications. AB-APP is using [bit](https://bitsrc.io), so you can not only use it as a whole but also make use of some parts of it.
+AB-APP2 is an AWS serverless boilerplate application, using GraphQL and AWS AppSync. It can be a starting point for your own applications.
 
-AB-APP is a site of fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP exposes the list of institute departments for authenticated users. It also allows to add and edit departments.
+AB-APP2 is an app of the fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP2 exposes a list of institute's departments for authenticated users. It allows to add and edit departments.
 
-AB-APP is deployed here: [d1v3l4fe3mshyi.cloudfront.net](http://d1v3l4fe3mshyi.cloudfront.net). It might not be the last version as we don't redeploy every time we push changes in the repo. Also, note that when visiting the link for the first time application may load slowly. This is because of the lambda cold start. In production warm up dump requests should be used to keep your lambda in a warm state.
+AB-APP2 is deployed [here](http://aws-codestar-eu-west-1-556321430524-ab-app2-app.s3-website-eu-west-1.amazonaws.com/). Note that when visiting the link for the first time, application may load slowly. This is because of the lambda cold start. In production warm up dump requests should be used to keep your lambda in a warm state.
 
-## Current status
-AB-APP is still under development. **It is not finished**! Feel free to experiment with it, but don't use it in production as is.
+## Application status
+AB-APP2 is still under development. **It is not finished**! So feel free to experiment with it, but don't use it in production as is.
 
 ## Architecture
 
-![AB-APP architecture](architecture-Main-AppSync.png)
+![AB-APP2 architecture](architecture-Main-AppSync.png)
 
-The application uses RDS/DynamoDB and S3 for persistent storage. A single lambda function holds all the backend logic. API Gateway (for now) is used as a proxy service to pass requests from the frontend to the backend. CloudFront CDN allows delivering the application's content fast.
+The application uses RDS/DynamoDB and S3 for persistent storage. A single lambda function holds all the backend logic. AWS AppSync is used to connect the frontend and the backend.
 
 The application has two main folders: **backend** and **frontend**. Backend folder contains backend code and frontend folder contains static content (frontend code, assets, etc.) 
 
-AB-APP backend is written in Node.js. AB-APP frontend is written with React, Redux, and Redux-Saga.
+AB-APP2 backend is written in Node.js. AB-APP2 frontend is written with React and AppSync client.
 
 ## Features implemented
 Authentication using **JWT tokens** + tokens refresh.
@@ -26,37 +26,38 @@ Authentication using **JWT tokens** + tokens refresh.
 **Forms** for adding and editing data with live, backend-frontend consistent validation.
 
 ## TODO
-- Replace API Gateway with AppSync. AppSync provides a convenient way of communication between frontend and backend using GraphQL queries and is also responsible for offline and real-time functionality.
 - Add DynamoDB support
 - Add real-time features
 - Add PWA features and offline functionality
 
 # Table of contents
-- [Installation for local development](https://github.com/gnemtsov/ab-app#installation)
-- [Starting AB-APP locally](https://github.com/gnemtsov/ab-app#starting-ab-app-locally)
-- JWT authentication
-- [Tables](https://github.com/gnemtsov/ab-app#tables)
-    - [Architecture](https://github.com/gnemtsov/ab-app#architecture-1)
-    - [Formatters functions](https://github.com/gnemtsov/ab-app#formatters-functions)
-    - [Core table component](https://github.com/gnemtsov/ab-app#core-table-component)
-- [Forms](https://github.com/gnemtsov/ab-app#forms)
-    - [Architecture](https://github.com/gnemtsov/ab-app#architecture-2)
-    - [Validation](https://github.com/gnemtsov/ab-app#validation)
-    - [Core form component](https://github.com/gnemtsov/ab-app#core-form-component)
+- [Local development](https://github.com/gnemtsov/ab-app2#local-development)
+    - [Setup environment](https://github.com/gnemtsov/ab-app2#setup-environment)
+    - [Local AppSync](https://github.com/gnemtsov/ab-app2#local-appsync)
+    - [Start AB-APP2 locally](https://github.com/gnemtsov/ab-app2#start-ab-app2-locally)
+- Authentication and authorization
+- [Tables](https://github.com/gnemtsov/ab-app2#tables)
+    - [Architecture](https://github.com/gnemtsov/ab-app2#architecture-1)
+    - [Formatters functions](https://github.com/gnemtsov/ab-app2#formatters-functions)
+    - [Core table component](https://github.com/gnemtsov/ab-app2#core-table-component)
+- [Forms](https://github.com/gnemtsov/ab-app2#forms)
+    - [Architecture](https://github.com/gnemtsov/ab-app2#architecture-2)
+    - [Validation](https://github.com/gnemtsov/ab-app2#validation)
+    - [Core form component](https://github.com/gnemtsov/ab-app2#core-form-component)
 - PWA and offline
-- Real-time
+- Real-time data
 - Testing
-- Deploying
+- Deployment
 - Bit
-- [How to contribute](https://github.com/gnemtsov/ab-app#how-to-contribute)
+- [How to contribute](https://github.com/gnemtsov/ab-app2#how-to-contribute)
 
 
-# Installation
+# Setup environment
 1. Install a database (MariaDB), Node.js, NPM, docker, [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) and [Redux DevTools extension](https://github.com/zalmoxisus/redux-devtools-extension)
-2. Git clone or download the project source
-3. Run `npm install` in the root folder, the frontend, and the backend folders
-4. Import mysql.dump.sql in your MariaDB instance
-5. Create the file `backend/.env` with the following content (replace DB_HOST with IP of your local DB instance):
+2. Git clone or download the project's source
+3. Run `npm install` both in the frontend and backend folders
+4. Import mysql.dump.sql into your MariaDB instance
+5. Create `backend/.env` file with the following content (replace DB_HOST with IP of your local DB instance):
 ```
 #Environment
 PROD=false
@@ -65,22 +66,31 @@ PROD=false
 SECRET="SOME_SECRET_CODE_672967256"
 
 #DB
-DB_HOST="192.168.1.5"
+DB_HOST="XXX.XXX.XXX.XXX"
 DB_NAME="abapp"
 DB_USER="abapp"
 DB_PASSWORD="abapp"
 ```
-6. Create a user **abapp** with password **abapp** in your mysql.user table and give appropriate rights to allow the lambda function to connect and work with your database
+6. Create `frontend/.env` file with the following content
+```
+REACT_APP_LOCAL_APPSYNC_URL=http://localhost:4000
+```
 
-# Starting AB-APP locally
-1. Run docker and then run `sam local start-api` to start local API Gateway (set --docker-volume-basedir parameter to your .../backend dir, if you use remote docker)
-2. Run `npm start` in the frontend folder to start webpack development server
-3. Have fun! :smiley:
+# Local AppSync
+For now [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) doesn't support AppSync (see [#551](https://github.com/awslabs/aws-sam-cli/issues/551)). So we've built a Node.js script, which works like local AppSync ([appsync-local.js](https://github.com/gnemtsov/ab-app2/blob/master/backend/appsync-local.js)). This script uses [JS-YAML](https://github.com/nodeca/js-yaml) and [Velocityjs](https://github.com/shepherdwind/velocity.js) to read definitions and velocity mapping templates from the CloudFormation template and GraphQL Schema. Then it creates [Apollo Server](https://github.com/apollographql/apollo-server),  to resolve GraphQL queries and mutations, and call local Lambda enpoint. 
+
+Subscriptions are not fully supported yet, but we are working on that.
+
+# Start AB-APP2 locally
+1. Run docker and then run `sam local start-lambda` in the root folder of the project to start local Lambda (set --docker-volume-basedir parameter to your root dir, if you use remote docker)
+2. Run `npm start` in the backend folder to start local AppSync. 
+3. Run `npm start` in the frontend folder to start webpack development server
+4. Have fun! :smiley:
 
 
 # Tables
 
-Tables are the best way to present data to the users of your application. AB-APP table implementation includes backend and frontend logic. 
+Tables are the best way to present data to the users of your application. AB-APP2 table implementation includes backend and frontend logic. 
 
 Implemented features:
 - Pagination

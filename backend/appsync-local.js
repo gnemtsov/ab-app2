@@ -348,7 +348,6 @@ const server = new ApolloServer({
             };
         }
     },
-    formatError: error => console.log(error),
     tracing: true
 });
 

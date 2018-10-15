@@ -2,6 +2,7 @@
 .idea/
 .c9/
 .vscode/
+build/
 *node_modules/
 snapshots-book/
 npm-debug.log

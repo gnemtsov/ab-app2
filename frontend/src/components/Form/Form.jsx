@@ -11,6 +11,8 @@ import Button from "../UI/Button/Button";
 import FormElement from "./FormElement/FormElement";
 import classes from "./Form.css";
 
+import QUERY_GET_FIELDS from "../../graphql/queries/getFormFields";
+
 class AbForm extends Component {
     static defaultProps = {
         infoIcon: <Icon name="info" width="26" height="26" stroke="#666666" />,
@@ -33,7 +35,9 @@ class AbForm extends Component {
         dataId: PropTypes.number,
         inputObjectName: PropTypes.string,
         outputObjectName: PropTypes.string.isRequired,
-        submitHandler: PropTypes.func
+        submitHandler: PropTypes.func,
+        mutation: PropTypes.object,
+        refetchQueries: PropTypes.array
     };
 
     constructor(props) {
@@ -48,26 +52,9 @@ class AbForm extends Component {
     }
 
     componentDidMount() {
-        const GET_FIELDS = gql`
-            query($formName: String!, $dataId: Int) {
-                getForm(formName: $formName, dataId: $dataId) {
-                    name
-                    label
-                    type
-                    value
-                    required
-                    validators {
-                        f
-                        message
-                        params
-                    }
-                }
-            }
-        `;
-
         this.gqlClient
             .query({
-                query: GET_FIELDS,
+                query: QUERY_GET_FIELDS,
                 variables: {
                     formName: this.props.formName,
                     dataId: this.props.dataId
@@ -180,7 +167,8 @@ class AbForm extends Component {
             this.gqlClient
                 .mutate({
                     mutation: this.props.mutation,
-                    variables
+                    variables,
+                    refetchQueries: this.props.refetchQueries
                 })
                 .then(response => {
                     if (this.props.submitHandler) {

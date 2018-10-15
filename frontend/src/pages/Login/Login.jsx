@@ -1,20 +1,12 @@
 import React from "react";
 import { Redirect } from "react-router-dom";
-import gql from "graphql-tag";
 
 import Form from "../../components/Form/Form";
 
+import MUTATION_LOGIN from "../../graphql/mutations/login";
+
 const Login = props => {
     const authRedirect = props.isAuth ? <Redirect to="/" /> : null;
-
-    const LOGIN = gql`
-        mutation($u_login: String!, $u_password: String!) {
-            login(u_login: $u_login, u_password: $u_password) {
-                accessToken
-                refreshToken
-            }
-        }
-    `;
 
     return (
         <div>
@@ -24,7 +16,7 @@ const Login = props => {
                 formName="login"
                 buttonText={["Login", "Logging in.."]}
                 outputObjectName="login"
-                mutation={LOGIN}
+                mutation={MUTATION_LOGIN}
                 submitHandler={response => props.login(response.data.login)}
             />
         </div>

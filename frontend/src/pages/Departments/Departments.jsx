@@ -1,48 +1,15 @@
 import React from "react";
 import { Query } from "react-apollo";
-import gql from "graphql-tag";
 
 import Spinner from "../../components/UI/Spinner/Spinner";
 import Table from "../../components/Table/Table";
 import classes from "./Departments.css";
 
-const LIST_DEPARTMENTS = gql`
-    query {
-        listDepartments {
-            cols {
-                name
-                title
-                defaultContent
-                sortOrder
-                sortDirection
-                frontendFormatter
-                html
-            }
-            rows {
-                d_id
-                d_title
-                d_head
-                d_size
-                d_created
-            }
-        }
-    }
-`;
-
-const LIST_DEPARTMENTS_SUBSCRIPTION = gql`
-    subscription {
-        newEdit {
-            d_id
-            d_title
-            d_head
-            d_size
-            d_created
-        }
-    }
-`;
+import QUERY_LIST_DEPARTMENTS from "../../graphql/queries/listDepartments";
+import SUBSCRIPTION_DEPARTMENT_UPDATE from "../../graphql/subscriptions/departmentUpdate";
 
 const Departments = () => (
-    <Query query={LIST_DEPARTMENTS}>
+    <Query query={QUERY_LIST_DEPARTMENTS}>
         {({ loading, error, data, subscribeToMore }) => {
             if (loading) return <Spinner />;
             if (error) throw error;
@@ -56,18 +23,18 @@ const Departments = () => (
                         {...data.listDepartments}
                         subscribeToUpdates={() =>
                             subscribeToMore({
-                                document: LIST_DEPARTMENTS_SUBSCRIPTION,
+                                document: SUBSCRIPTION_DEPARTMENT_UPDATE,
                                 updateQuery: (prev, { subscriptionData }) => {
                                     console.log(prev, subscriptionData);
+                                    return prev;
+
                                     //if (!subscriptionData.data) return prev;
                                     //const newEdit = subscriptionData.data.newEdit;
                                     // const i = prev.fields.findIndex(field => fieldName === field.name);
-                                    return prev;
-
                                     /* return Object.assign({}, prev, {
-                                entry: {
-                                  comments: [newFeedItem, ...prev.entry.comments]
-                                }*/
+                                    entry: {
+                                      comments: [newFeedItem, ...prev.entry.comments]
+                                    }*/
                                 }
                             })
                         }

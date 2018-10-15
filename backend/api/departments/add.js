@@ -21,14 +21,14 @@ module.exports = (event, context, callback) => {
         DB.connect()
             .then(conn => conn.execute(sql, params))
             .then(result => {
-                const [{ affectedRows, insertedId }] = result;
+                const [{ affectedRows, insertId }] = result;
                 if (affectedRows === 0) {
                     return callback({
                         type: "Data insert failure",
                         message: "Data was not inserted"
                     });
                 } else {
-                    return callback(null, { affectedRows, insertedId });
+                    return callback(null, { ...values, d_id: insertId.toString() });
                 }
             });
     });

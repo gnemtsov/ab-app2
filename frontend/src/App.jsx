@@ -2,11 +2,11 @@ import React, { Component } from "react";
 import { Route, Switch, withRouter, Redirect } from "react-router-dom";
 import asyncComponent from "./hoc/asyncComponent/asyncComponent";
 
-import gql from "graphql-tag";
-
 import Layout from "./hoc/Layout/Layout";
 import Departments from "./pages/Departments/Departments";
 import Login from "./pages/Login/Login";
+
+import MUTATION_TOKEN from "./graphql/mutations/token";
 
 import classes from "./App.css";
 
@@ -52,18 +52,9 @@ class App extends Component {
             if (currentTimestamp > tokenData.exp) {
                 console.log("App.refreshToken: access token expired, trying to refresh..");
 
-                const TOKEN_QUERY = gql`
-                    mutation($sub: String!, $refreshToken: String!) {
-                        token(sub: $sub, refreshToken: $refreshToken) {
-                            accessToken
-                            refreshToken
-                        }
-                    }
-                `;
-
                 return this.gqlClient
                     .mutate({
-                        mutation: TOKEN_QUERY,
+                        mutation: MUTATION_TOKEN,
                         variables: { sub: tokenData.sub, refreshToken: tokens.refreshToken }
                     })
                     .then(response => {

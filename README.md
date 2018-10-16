@@ -1,48 +1,49 @@
-# Introduction
-AB-APP2 is an AWS serverless boilerplate application, using GraphQL and AWS AppSync. It can be a starting point for your own applications.
+# AB-APP2
+AB-APP2 is an AWS serverless boilerplate application. It is written in JavaScript (React) and Node.js. It uses GraphQL, AWS AppSync, and AWS Lambda. It can be a starting point for your own applications.
 
-AB-APP2 is an app of the fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP2 exposes a list of institute's departments for authenticated users. It allows to add and edit departments.
+If you don't need real-time and offline functionality have a look at [AB-APP](https://github.com/gnemtsov/ab-app) (this is the API Gateway version of the same boilerplate).
 
-AB-APP2 is deployed [here](http://aws-codestar-eu-west-1-556321430524-ab-app2-app.s3-website-eu-west-1.amazonaws.com/). Note that when visiting the link for the first time, application may load slowly. This is because of the lambda cold start. In production warm up dump requests should be used to keep your lambda in a warm state.
+This boilerplate application is an app of the fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP2 exposes a list of institute's departments for authenticated users. It allows to add and edit departments.
 
-## Application status
-AB-APP2 is still under development. **It is not finished**! So feel free to experiment with it, but don't use it in production as is.
-
-## Architecture
-
-![AB-APP2 architecture](architecture-Main-AppSync.png)
-
-The application uses RDS/DynamoDB and S3 for persistent storage. A single lambda function holds all the backend logic. AWS AppSync is used to connect the frontend and the backend.
-
-The application has two main folders: **backend** and **frontend**. Backend folder contains backend code and frontend folder contains static content (frontend code, assets, etc.) 
-
-AB-APP2 backend is written in Node.js. AB-APP2 frontend is written with React and AppSync client.
-
-## Features implemented
-Authorization and authentication using **JWT tokens** + tokens refresh.
-
-**Tables** for viewing data with pagination, row selection, sorting and CSV export.
-
-**Forms** for adding and editing data with live, backend-frontend consistent validation.
-
-## TODO
-- Put GraphQL query inside Table component
-- Add DynamoDB support
-- Add real-time features
-- Add PWA features and offline functionality
+You can see AB-APP2 in action [here](http://aws-codestar-eu-west-1-556321430524-ab-app2-app.s3-website-eu-west-1.amazonaws.com/). Current version is deployed without AWS CloudFront for simplicity, but when running a production app, consider using CloudFront to speed up. Also note that when visiting the link for the first time, application may load slowly. This is because of the lambda cold start. In production warm up dump requests should be used to keep your lambda in a warm state.
 
 # Table of contents
+- [Current status](https://github.com/gnemtsov/ab-app2#current-status)
+- [Architecture](https://github.com/gnemtsov/ab-app2#architecture)
+- [Features implemented](https://github.com/gnemtsov/ab-app2#features-implemented)
 - [Local development](https://github.com/gnemtsov/ab-app2#local-development)
     - [Setup local environment](https://github.com/gnemtsov/ab-app2#setup-local-environment)
     - [Local AppSync](https://github.com/gnemtsov/ab-app2#local-appsync)
     - [How to start AB-APP2 locally](https://github.com/gnemtsov/ab-app2#how-to-start-ab-app2-locally)
-- [Authentication and authorization](https://github.com/gnemtsov/ab-app2#authentication-and-authorization)
+- [Authorization](https://github.com/gnemtsov/ab-app2#authorization)
 - Real-time data
 - PWA and offline
 - Testing
 - Deployment
 - Bit
+- [TODO](https://github.com/gnemtsov/ab-app2#todo)
 - [How to contribute](https://github.com/gnemtsov/ab-app2#how-to-contribute)
+
+
+
+
+# Current status
+AB-APP2 is still under development. **It is not finished**! 
+
+Feel free to experiment with it, but don't use it in production as is!
+
+# Architecture
+
+![AB-APP2 architecture](architecture-Main-AppSync.png)
+
+The application uses RDS/DynamoDB and S3 for persistent storage. A single lambda function holds all the backend logic. AWS AppSync is used to connect frontend with backend.
+
+The application has two main folders: **backend** and **frontend**. These folders hold source code of the backend and the frontend respectively.
+
+# Features implemented
+- Authorization and authentication using **JWT tokens** + tokens refresh
+- [Tables](TABLES.md) for viewing data with pagination, row selection, sorting and CSV export
+- [Forms](FORMS.md) for adding and editing data with live, backend-frontend consistent validation.
 
 # Local development
 
@@ -71,7 +72,7 @@ REACT_APP_LOCAL_APPSYNC_URL=http://localhost:4000
 ```
 
 ## Local AppSync
-For now [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) doesn't support AppSync (see [#551](https://github.com/awslabs/aws-sam-cli/issues/551)). So we've built a Node.js script, which works like local AppSync ([appsync-local.js](https://github.com/gnemtsov/ab-app2/blob/master/backend/appsync-local.js)). This script uses [JS-YAML](https://github.com/nodeca/js-yaml) and [Velocityjs](https://github.com/shepherdwind/velocity.js) to read definitions and velocity mapping templates from the project's CloudFormation template and GraphQL Schema. Then it creates [Apollo Server](https://github.com/apollographql/apollo-server)  to resolve GraphQL queries and mutations, and call local Lambda enpoint. 
+For now [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) doesn't support AppSync (see [#551](https://github.com/awslabs/aws-sam-cli/issues/551)). So we've built a Node.js script, which works like local AppSync ([appsync-local.js](https://github.com/gnemtsov/ab-app2/blob/master/backend/appsync-local.js)). This script uses [JS-YAML](https://github.com/nodeca/js-yaml) and [Velocityjs](https://github.com/shepherdwind/velocity.js) to read definitions and velocity mapping templates from the project's CloudFormation template and GraphQL Schema. Then it creates [Apollo Server](https://github.com/apollographql/apollo-server),  to resolve GraphQL queries and mutations, and call local Lambda enpoint. 
 
 Subscriptions are not fully supported yet, but we are working on that.
 
@@ -81,14 +82,17 @@ Subscriptions are not fully supported yet, but we are working on that.
 3. Run `npm start` in the frontend folder to start webpack development server
 4. Have fun! :smiley:
 
-
 # Authorization
+AB-APP2 AppSync client is authorized using AWS_IAM auth type. But this first auth layer simply allows access to AppSync API for all anonymous users. It is handled by AWS Cognito federated identity pool with enabled unauthenticated access.
 
-AB-APP2 AppSync client is authorized using AWS_IAM auth type. But this first auth layer simply allows access to AppSync API for all anonimous users. It is handled by AWS Cognito federated identity pool with enabled unauthenticated access.
+Actual authorization of AB-APP2 users is based on JWT tokens. Bearer token is passed along side with cognito tokens in `x-app-token` header with every request. All auth logic is handled by the backend Lambda code.
 
-Actual authorization of AB-APP2 users is based on JWT tokens. Bearer token is passed along side with cognito tokens in x-app-token header with every request. All auth logic is handled by the backend lambda code.
+# TODO
+- DynamoDB support
+- Subscriptions and Real-Time features
+- PWA features and offline functionality
 
-## How to contribute
+# How to contribute
 1. Click the "Fork" button.
 2. Clone your fork to your local machine:
 ```shell
@@ -96,7 +100,7 @@ git clone https://github.com/YOUR_USERNAME/ab-app.git
 ```
 3. Add 'upstream' repo to keep your form up to date:
 ```shell
-git remote add upstream https://github.com/gnemtsov/ab-app.git
+git remote add upstream https://github.com/gnemtsov/ab-app2.git
 ```
 4. Fetch latest upstream changes:
 ```shell

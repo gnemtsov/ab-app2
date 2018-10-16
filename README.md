@@ -19,23 +19,24 @@ The application has two main folders: **backend** and **frontend**. Backend fold
 AB-APP2 backend is written in Node.js. AB-APP2 frontend is written with React and AppSync client.
 
 ## Features implemented
-Authentication using **JWT tokens** + tokens refresh.
+Authorization and authentication using **JWT tokens** + tokens refresh.
 
 **Tables** for viewing data with pagination, row selection, sorting and CSV export.
 
 **Forms** for adding and editing data with live, backend-frontend consistent validation.
 
 ## TODO
+- Put GraphQL query inside Table component
 - Add DynamoDB support
 - Add real-time features
 - Add PWA features and offline functionality
 
 # Table of contents
 - [Local development](https://github.com/gnemtsov/ab-app2#local-development)
-    - [Setup environment](https://github.com/gnemtsov/ab-app2#setup-environment)
+    - [Setup local environment](https://github.com/gnemtsov/ab-app2#setup-local-environment)
     - [Local AppSync](https://github.com/gnemtsov/ab-app2#local-appsync)
-    - [Start AB-APP2 locally](https://github.com/gnemtsov/ab-app2#start-ab-app2-locally)
-- Authentication and authorization
+    - [How to start AB-APP2 locally](https://github.com/gnemtsov/ab-app2#how-to-start-ab-app2-locally)
+- [Authentication and authorization](https://github.com/gnemtsov/ab-app2#authentication-and-authorization)
 - [Tables](https://github.com/gnemtsov/ab-app2#tables)
     - [Architecture](https://github.com/gnemtsov/ab-app2#architecture-1)
     - [Formatters functions](https://github.com/gnemtsov/ab-app2#formatters-functions)
@@ -44,15 +45,16 @@ Authentication using **JWT tokens** + tokens refresh.
     - [Architecture](https://github.com/gnemtsov/ab-app2#architecture-2)
     - [Validation](https://github.com/gnemtsov/ab-app2#validation)
     - [Core form component](https://github.com/gnemtsov/ab-app2#core-form-component)
-- PWA and offline
 - Real-time data
+- PWA and offline
 - Testing
 - Deployment
 - Bit
 - [How to contribute](https://github.com/gnemtsov/ab-app2#how-to-contribute)
 
+# Local development
 
-# Setup environment
+## Setup local environment
 1. Install a database (MariaDB), Node.js, NPM, docker, [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) and [Redux DevTools extension](https://github.com/zalmoxisus/redux-devtools-extension)
 2. Git clone or download the project's source
 3. Run `npm install` both in the frontend and backend folders
@@ -76,17 +78,23 @@ DB_PASSWORD="abapp"
 REACT_APP_LOCAL_APPSYNC_URL=http://localhost:4000
 ```
 
-# Local AppSync
-For now [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) doesn't support AppSync (see [#551](https://github.com/awslabs/aws-sam-cli/issues/551)). So we've built a Node.js script, which works like local AppSync ([appsync-local.js](https://github.com/gnemtsov/ab-app2/blob/master/backend/appsync-local.js)). This script uses [JS-YAML](https://github.com/nodeca/js-yaml) and [Velocityjs](https://github.com/shepherdwind/velocity.js) to read definitions and velocity mapping templates from the CloudFormation template and GraphQL Schema. Then it creates [Apollo Server](https://github.com/apollographql/apollo-server),  to resolve GraphQL queries and mutations, and call local Lambda enpoint. 
+## Local AppSync
+For now [aws-sam-cli](https://github.com/awslabs/aws-sam-cli) doesn't support AppSync (see [#551](https://github.com/awslabs/aws-sam-cli/issues/551)). So we've built a Node.js script, which works like local AppSync ([appsync-local.js](https://github.com/gnemtsov/ab-app2/blob/master/backend/appsync-local.js)). This script uses [JS-YAML](https://github.com/nodeca/js-yaml) and [Velocityjs](https://github.com/shepherdwind/velocity.js) to read definitions and velocity mapping templates from the project's CloudFormation template and GraphQL Schema. Then it creates [Apollo Server](https://github.com/apollographql/apollo-server)  to resolve GraphQL queries and mutations, and call local Lambda enpoint. 
 
 Subscriptions are not fully supported yet, but we are working on that.
 
-# Start AB-APP2 locally
+## How to start AB-APP2 locally
 1. Run docker and then run `sam local start-lambda` in the root folder of the project to start local Lambda (set --docker-volume-basedir parameter to your root dir, if you use remote docker)
 2. Run `npm start` in the backend folder to start local AppSync. 
 3. Run `npm start` in the frontend folder to start webpack development server
 4. Have fun! :smiley:
 
+
+# Authorization
+
+AB-APP2 AppSync client is authorized using AWS_IAM auth type. But this first auth layer simply allows access to AppSync API for all anonimous users. It is handled by AWS Cognito federated identity pool with enabled unauthenticated access.
+
+Actual authorization of AB-APP2 users is based on JWT tokens. Bearer token is passed along side with cognito tokens in x-app-token header with every request. All auth logic is handled by the backend lambda code.
 
 # Tables
 
@@ -107,9 +115,7 @@ On the backend, there is a corresponding .sql file for each application table. T
 
 The backend is responsible for fetching table data from a database, applying backend "formatters" (see below) and providing column descriptions. 
 
-The frontend is responsible for rendering tables. It has two React components: a high order table component (HOC) and a core table component. The core table component can be used outside AB-APP as an independent React component. 
-
-HOC is responsible for fetching table data from the backend and applying frontend formatters. The core component is responsible for rendering and providing main table functionality (selecting, sorting, pagination, etc.)
+The frontend is responsible for rendering tables and providing all its' functionality.
 
 ![Tables architecture](architecture-Tables-AppSync.png)
 
@@ -130,8 +136,6 @@ If you need to use a formatter, try to use frontend formatter. It is executed on
 Use backend formatters only if there are no other options. Backend formatters are executed on the backend and for all column cells at once.
 
 ## Core table component
-
-This component can be used in any application without conjunction with the AB-APP backend.
 
 The component has the following properties:
 
@@ -168,12 +172,6 @@ Each table column is an object with the following properties:
 | sortOrder | Integer | 0 | Default column sort priority |
 | sortDirection | String | 'ASC' | Default column sort direction (ASC or DESC) |
 | html | Boolean | false | Whether the cell content should be put to page as html |
-
-
-The following properties are available only when using tables as part of AB-APP:
-
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
 | frontendFormatter | String | '' | Name of the frontend formatter function |
 | backendFormatter | String | '' | Name of the backend formatter function |
 
@@ -197,7 +195,7 @@ For example
 }]
 ```
 
-### Using component independently
+### Example
 ```jsx
 import React, { Component } from 'react';
 
@@ -250,28 +248,24 @@ Implemented features:
 
 ## Architecture
 
-Architecture is similar to the table architecture. The frontend "knows" only the form's endpoint. It uses a GET request to get the form's configuration, data and validation functions. It uses a POST request to send user data to the backend.
-
 On the backend, there is a corresponding .json file for each form. This file holds fields descriptions. On the frontend, this data goes into fields property of the table component. There is also a .sql file for some forms which holds the query for fetching data for the form fields from a database.
 
-The backend is responsible for building form config and sending it to the frontend. It is also responsible for accepting POST requests, validating data and putting it into the database. 
+The backend is responsible for building form config and sending it to the frontend. It is also responsible for accepting GraphQL mutations, validating data and putting changes into the database. 
 
-The frontend has two React components: a high order component (HOC) and a core form component. 
-
-HOC is responsible for fetching form data from the backend and sending user data back - submission of the form. The core component is responsible for rendering and validation.
+The frontend is responsible for fetching form data from the backend and sending user data back - submission of the form. It also handles client-side validation.
 
 ![Forms architecture](architecture-Forms-AppSync.png)
 
 ## Validation
 
-Validation is a very important feature because user experience depends on it a lot.
+Validation is a very important feature.
 
 AB-APP implements realtime validation as user types:
 ![Live validation](validation.gif)
 
 There is a library of validation functions on the backend. When you configure form fields in the .json file you may put an array of validators functions names which you want to use with this field. 
 
-Some validators will be added in the fields configs automatically by fetching and parsing the corresponding column types from the database.
+Some validators will be added in the fields configs implicitly by fetching and parsing the corresponding column types from the database.
 
 All validators functions bodies are stored on the backend and they are passed to the frontend as strings. On the frontend, these functions are recreated using `new Function()` constructor which allows to create functions dynamically.
 
@@ -282,13 +276,11 @@ For example, this validator checks that a string length is not less than **min**
 module.exports.strMinMax = (value, min, max) => value.length >= min && value.length <= max;
 ```
 
-As user types in a field's value it is passed to all field's validators one by one. If none of the validators return false field is considered valid. If one of the validators returns false (first wins) field gets invalidated and the validator's message is shown on the page. The message, as well as additional validator parameters, are stored along with validator function body in the object with validator description (see the description of fields property of the React component).
+As user types in the value of an input is passed to all attached validators one by one. If all validators return true, the field is considered valid. If one of the validators returns false (first wins), the field gets invalidated and the validator's message is shown under the input field. The message, as well as additional validator parameters, are stored along with validator function body in the object with validator description (see the description of fields property of the React component).
 
 This logic allows writing validators functions in one place - on the backend, making it the single source of truth. It also allows to apply same validators on the frontend as user types and then on the backend when it receives submitted form. We need to validate data on the backend because we should never trust any data, which is coming from the frontend.
 
-## Core form component
-
-This component can be used in any application without conjunction with the AB-APP backend.
+## Form component
 
 The component has the following properties:
 
@@ -298,12 +290,15 @@ The component has the following properties:
 | layout | String ('Horizontal' or 'Inline') | 'Horizontal' | Form layout type |
 | infoIcon | HTML or JSX | feather info icon | Here you can put your custom "i" icon - it can be a react component |
 | buttonText | String or Array of strings | ["Submit", "Sending..."] | Text for the submit button. If an array is given it must contain two elements: one for default state and one for sending state |
-| doneText | String | 'Done!' | Text that appears near the submit button if the form was submitted successfully |
+| successText | String | 'Success!' | Text that appears near the submit button if the form was submitted successfully |
+| failureText | String | 'Failure!' | Text that appears near the submit button if the form was submitted successfully |
 | doneTextDuration | Integer | 2000 | Number of milliseconds to display doneText near the submit button |
 | className | String | '' | Name of a custom class (see below) |
+| dataId | Number | 0 | A unique ID of a data object from the database (for "Add" form it is 0) |
 | submitHandler | Function | null | Function that will be invoked when the form is submitted |
-| fields | Array of objects | [] | Form fields (see below) |
-
+| inputObjectName | String | null | Mutations variables can be sent as object properties. If so this is the name of the object |
+| mutation | GraphQL AST | null | GraphQL mutation that updates data |
+| refetchQueries | Array of objects | null | GraphQL queries to refetch data after update |
 
 ### Styling
 
@@ -317,25 +312,7 @@ You can put a custom class on top of default form styles, so all custom styles w
 ```
 
 ### Submitting form
-Use **submitHandler** property to set a function that will be invoked when the form is submitted. Values of the form will be passed to this function as a parameter. This function must return a promise. 
-
-If the promise resolves `doneText` is shown near the submit button. 
-
-If the promise rejects (it can happen when the server invalidates a field, for example), the error will be caught by the form component. It expects to receive the error in the following format:
-```
-{
-    response: {
-            data: {
-                field: {
-                    name: 'field_name_here',
-                    message: 'error_message_here'
-                }
-            }
-        }
-}
-```
-
-If the form component receives error it shows error message the same way it does when a form field is invalidated on the frontend.
+Use **submitHandler** property to set a function that will be invoked when the form is submitted. Submit result will be passed to this function as a parameter.
 
 ### Form fields
 
@@ -376,8 +353,7 @@ Each validator is described by a separate object with the following properties:
 
 When a user changes a field all validators are executed one by one with the current value of the field. If the validator returns `false`, execution stops and current validator message is shown - the field is considered invalid.
 
-### Using component independently
-In this code, we use [axios](https://github.com/axios/axios) to send a post request. 
+### Example
 
 ```jsx
 import React, { Component } from 'react';

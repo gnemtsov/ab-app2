@@ -264,6 +264,28 @@ Resources:
                 }
             ResponseMappingTemplate: "$util.toJson($context.result)"
 
+    AppSyncRemoveMutationResolver:
+        Type: "AWS::AppSync::Resolver"
+        DependsOn: AppSyncSchema
+        Properties:
+            ApiId: !GetAtt [AppSyncApi, ApiId]
+            TypeName: Mutation
+            FieldName: remove
+            DataSourceName: !GetAtt [AppSyncDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                  "version" : "2017-02-28",
+                  "operation": "Invoke",
+                  "payload": {
+                      "module": "departments",
+                      "action": "remove",
+                      "arguments": $utils.toJson($context.arguments),
+                      "identity": $utils.toJson($context.identity),
+                      "headers": $utils.toJson($context.request.headers)
+                  }
+                }
+            ResponseMappingTemplate: "$util.toJson($context.result)"
+
     AppSyncNewEditResolver:
         Type: "AWS::AppSync::Resolver"
         DependsOn: AppSyncSchema

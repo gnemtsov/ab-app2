@@ -11,6 +11,10 @@ type Department {
 	d_created: String
 }
 
+type DepartmentRemoved {
+	d_id: ID!
+}
+
 input DepartmentInput {
 	d_id: ID!
 	d_title: String
@@ -54,11 +58,13 @@ type Mutation {
 	token(sub: String!, refreshToken: String!): AuthToken
 	add(department: DepartmentInput!): Department!
 	edit(department: DepartmentInput!): Department!
+	remove(departmentId: ID!) : DepartmentRemoved!
 }
 
 type Query {
 	getForm(formName: String!, dataId: Int): [FormField]
 	listDepartments: DepartmentsTable
+	removeDepartment(departmentId: Int): Boolean
 }
 
 type Subscription {

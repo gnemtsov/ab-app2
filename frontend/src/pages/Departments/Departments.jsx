@@ -30,7 +30,7 @@ class Departments extends Component {
             .mutate({
                 mutation: MUTATION_REMOVE_DEPARTMENT,
                 variables,
-                refetchQueries: [{ query: QUERY_LIST_DEPARTMENTS }]
+                refetchQueries: [{query: QUERY_LIST_DEPARTMENTS}]
             });
     }
     

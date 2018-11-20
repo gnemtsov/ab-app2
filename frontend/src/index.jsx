@@ -10,6 +10,7 @@ import AWS from "aws-sdk";
 
 import { AWSAppSyncClient, createAppSyncLink } from "aws-appsync";
 import { ApolloLink } from "apollo-link";
+//import { HttpLink } from "apollo-link-http";
 import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
 
@@ -42,6 +43,8 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 AWS.config.update({ region: "eu-west-1" });
+//const resultsFetcherLink = new HttpLink({ uri: "http://52.17.94.253:4000/graphql" });
+
 const appSyncLink = createAppSyncLink({
     url:
         process.env.NODE_ENV === "development"
@@ -54,6 +57,7 @@ const appSyncLink = createAppSyncLink({
             IdentityPoolId: "eu-west-1:dffe4e03-9e89-4118-911f-ee327e257d9f"
         })
     }
+    //resultsFetcherLink
 });
 
 const link = ApolloLink.from([authLink, errorLink, appSyncLink]);

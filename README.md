@@ -3,7 +3,7 @@ AB-APP2 is an AWS serverless boilerplate application. It is written in JavaScrip
 
 If you don't need real-time and offline functionality have a look at [AB-APP](https://github.com/gnemtsov/ab-app) (this is the API Gateway version of the same boilerplate).
 
-This boilerplate application is an app of the fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP2 exposes a list of institute's departments for authenticated users. It allows to add and edit departments.
+This boilerplate application is an app of the fictional "Scientific Research Institute of Sorcery and Wizardry" from the famous novel by Boris and Arkady Strugatsky "[Monday Begins on Saturday](https://en.wikipedia.org/wiki/Monday_Begins_on_Saturday)". AB-APP2 exposes a list of institute's departments for authenticated users. It allows adding and editting departments.
 
 You can see AB-APP2 in action [here](http://aws-codestar-eu-west-1-556321430524-ab-app2-app.s3-website-eu-west-1.amazonaws.com/). Current version is deployed without AWS CloudFront for simplicity, but when running a production app, consider using CloudFront to speed up. Also note that when visiting the link for the first time, application may load slowly. This is because of the lambda cold start. In production warm up dump requests should be used to keep your lambda in a warm state.
 

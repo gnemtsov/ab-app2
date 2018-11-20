@@ -13,7 +13,7 @@ const Edit = props => {
         <div className={classes.FormContainer}>
             <Form
                 formTitle="Edit department"
-                buttonText={["Save", "Saving.."]}
+                buttonText={["Save", "Saving..."]}
                 doneText={"Saved!"}
                 formName="department"
                 dataId={Number(queryParams.d_id)}

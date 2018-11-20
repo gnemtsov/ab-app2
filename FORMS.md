@@ -1,4 +1,4 @@
-# Forms
+# AB-APP2 forms
 
 Writing forms markup, programming fields validation (both frontend and backend) can be hard! AB-APP makes the whole process a breeze. You just provide form data as a simple json config and that's it! :tada:
 
@@ -115,47 +115,3 @@ Each validator is described by a separate object with the following properties:
 - **f** (function or function body as a string): validator function, it should return true or false
 
 When a user changes a field all validators are executed one by one with the current value of the field. If the validator returns `false`, execution stops and current validator message is shown - the field is considered invalid.
-
-### Example
-
-```jsx
-import React, { Component } from 'react';
-import axios from 'axios';
-
-import FormComponent from 'Form';
-
-export default class App extends Component {
-    render() {
-        const conf = {
-            submitHandler: values => {
-                console.log('Form values should be sent to the server here.');
-                console.log('submitHandler must return promise.');
-                return axios.post('api_endpoint_here', values)
-                            .then(response => /*do something*/);
-             }
-        }
-
-        const fields = [
-            {
-                name: 'name',
-                label: 'Pet name',
-                type: 'String',
-                required: true,
-                validators: [
-                    {
-                        params: [4, 64],
-                        message: 'Must be bigger than 4 and smaller than 64 chars',
-                        f: (value, minLength, maxLength) => value.length >= minLength && value.length <= maxLength
-                    },
-                    {
-                        message: 'Can\'t contain digits',
-                        f: value => !/[1-9]/.test(value)
-                    },
-                ]
-            }
-        ]
-
-        return <FormComponent {...conf} fields={fields} />;
-    }
-}
-```

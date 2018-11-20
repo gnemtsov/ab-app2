@@ -1,5 +1,14 @@
-const { ApolloServer, PubSub } = require("apollo-server");
-var { Source } = require("graphql");
+const express = require("express");
+const bodyParser = require("body-parser");
+const { createServer } = require("http");
+const { Source, execute, subscribe } = require("graphql");
+const { ApolloServer } = require("apollo-server-express");
+const { SubscriptionServer } = require("subscriptions-transport-ws");
+
+//const { PubSub } = require("graphql-subscriptions");
+const { MQTTPubSub } = require("graphql-mqtt-subscriptions");
+//const mqttCon = require("mqtt-connection");
+
 const velocity = require("velocityjs");
 const yaml = require("js-yaml");
 const axios = require("axios");
@@ -18,7 +27,7 @@ process.argv.forEach(option => {
     if (option === "-q" || option === "--quiet") options.quiet = true;
 });
 
-const pubsub = new PubSub();
+const pubsub = new MQTTPubSub();
 
 const CF_SCHEMA = yaml.Schema.create([
     new yaml.Type("!Ref", {
@@ -230,9 +239,19 @@ Object.keys(cfTemplate.Resources).forEach(name => {
 
         if (typeName === "Subscription") {
             resolvers["Subscription"][fieldName] = {
-                subscribe: () => {
+                resolve: payload => {
+                    const d = new Date();
                     console.log(
-                        `Resolver`,
+                        `Subscription resolve() for the field`,
+                        chalk.black.bgBlue(fieldName),
+                        `executed at ${d.toLocaleTimeString()}`
+                    );
+                    return payload;
+                },
+                subscribe: () => {
+                    const d = new Date();
+                    console.log(
+                        `Subscription subscribe() for the field`,
                         chalk.black.bgBlue(fieldName),
                         `executed at ${d.toLocaleTimeString()}`
                     );
@@ -335,12 +354,26 @@ Object.keys(cfTemplate.Resources).forEach(name => {
 });
 
 //creating and starting Apollo-server
-const server = new ApolloServer({
+const apolloConfig = {
     typeDefs,
     resolvers,
-    context: async ({ req, connection }) => {
+    subscriptions: {
+        onConnect: (connectionParams, webSocket, context) => {
+            console.log("Subscriptions - onConnect fired");
+        }
+    },
+    context: async data => {
+        const { req, connection } = data;
+        console.log("context. executed!", connection);
+        //console.log(data);
+        //if(req) console.log('Request', req.body);
+        //if(connection) console.log('Connection', connection);
         if (connection) {
-            return {};
+            console.log("Connecting to socket..");
+            //const MQTTclient = mqttCon(connection);
+
+            //return client.connack({ returnCode: 0 });
+            return { returnCode: 0 };
         } else {
             return {
                 request: { headers: req.headers },
@@ -348,10 +381,85 @@ const server = new ApolloServer({
             };
         }
     },
+    formatResponse: data => {
+        data.extensions.subscription = {
+            mqttConnections: [
+                {
+                    client: "asdfasdf",
+                    topics: ["556321430524/hn4bqejfjzfvro2xit6utn6rcq/newEdit/"],
+                    url: "ws://52.17.94.253:4000/subscriptions"
+                }
+            ],
+            newSubscriptions: {
+                newEdit: {
+                    topic: "556321430524/hn4bqejfjzfvro2xit6utn6rcq/newEdit/",
+                    expireTime: 1541639597
+                }
+            }
+        };
+
+        return data;
+    },
     tracing: true
+};
+
+const app = express();
+const gqlserver = new ApolloServer(apolloConfig);
+gqlserver.applyMiddleware({ app });
+
+const server = createServer(app);
+
+server.listen(4000, () => {
+    new SubscriptionServer(
+        {
+            execute,
+            subscribe,
+            typeDefs,
+            resolvers,
+            onConnect: (connectionParams, webSocket, context) => {
+                console.log("Subscriptions - onConnect fired");
+            }
+        },
+        {
+            server: server,
+            path: "/subscriptions"
+        }
+    );
 });
 
-server.listen().then(({ url, subscriptionsUrl }) => {
+/*
+const server = new ApolloServer(apolloConfig);
+
+server.listen().then(data => {
+    const { url, subscriptionsUrl } = data;
     console.log(chalk.bold(`Local AppSync ready at ${url}`));
     console.log(chalk.bold(`The subscriptions url is ${subscriptionsUrl}\n`));
 });
+*/
+
+//pubsub.subscribe('newEdit', (result) => {
+// console.log(`Received result of ${SOMETHING_CHANGED_TOPIC}`, result)
+//})
+/*
+let id = 0;
+setInterval(() => {
+  pubsub.publish('Mutation_edit', {d_id: id++, d_title: "some title"})
+}, 5000)
+*/
+
+/*
+https://github.com/mqttjs/mqtt-connection
+https://github.com/JacopoDaeli/realtime-graphql/blob/master/src/server/mqtt.js
+jacopo.daeli@gmail.com
+
+https://github.com/gnemtsov/subscriptions-transport-ws
+
+mqtt pubsub implementation: https://github.com/davidyaha/graphql-mqtt-subscriptions
+
+Have a look at old version of subscriptionManager, it might be a good fit for us. 
+If not, probably we need to implement our own subcriptions-transport-ws for mqtt over sockets...
+
+Working with mqtt:
+https://github.com/mqttjs/mqtt-packet
+https://github.com/mqttjs/mqtt-connection
+*/

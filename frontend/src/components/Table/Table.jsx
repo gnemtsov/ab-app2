@@ -381,6 +381,20 @@ export default class Table extends Component {
                     cells.push(<td key={tdKey}>{value}</td>);
                 }
             }
+            cells.push(
+                <td key={`td${i}remove`}>
+                    <div
+                        onMouseDown={event => {
+                            event.stopPropagation();
+                        }}
+                        onClick={event => {
+                            event.stopPropagation();
+                            this.props.onRemove(row);
+                        }}>
+                        X
+                    </div>
+                </td>
+            );
 
             if (this.state.selected.indexOf(i) !== -1) {
                 attachedClasses.push(classes.Selected);
